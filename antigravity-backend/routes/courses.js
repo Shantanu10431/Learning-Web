@@ -1,0 +1,121 @@
+const express = require('express');
+const db = require('../db/pool');
+const { authMiddleware, roleMiddleware } = require('../middleware/auth');
+
+const router = express.Router();
+
+router.get('/courses', async (req, res) => {
+    try {
+        const result = await db.query(`
+      SELECT c.*, u.name as instructor_name 
+      FROM courses c 
+      JOIN users u ON c.instructor_id = u.user_id 
+      WHERE is_published = true
+      ORDER BY c.created_at DESC
+    `);
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.get('/courses/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const courseRes = await db.query(`
+      SELECT c.*, u.name as instructor_name 
+      FROM courses c 
+      JOIN users u ON c.instructor_id = u.user_id 
+      WHERE c.course_id = $1
+    `, [id]);
+
+        if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+        const course = courseRes.rows[0];
+
+        const sectionsRes = await db.query('SELECT * FROM sections WHERE course_id = $1 ORDER BY order_number', [id]);
+        const sectionIds = sectionsRes.rows.map(s => s.section_id);
+
+        let lessons = [];
+        if (sectionIds.length > 0) {
+            const lessonsRes = await db.query(`
+        SELECT * FROM lessons 
+        WHERE section_id = ANY($1) 
+        ORDER BY order_number
+      `, [sectionIds]);
+            lessons = lessonsRes.rows;
+        }
+
+        course.sections = sectionsRes.rows.map(section => ({
+            ...section,
+            lessons: lessons.filter(l => l.section_id === section.section_id)
+        }));
+
+        res.json(course);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.post('/courses', authMiddleware, roleMiddleware(['instructor', 'admin']), async (req, res) => {
+    try {
+        const { title, description, thumbnail_url, category, is_published } = req.body;
+        const instructor_id = req.user.user_id;
+
+        const newCourse = await db.query(`
+      INSERT INTO courses (title, description, thumbnail_url, category, instructor_id, is_published)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+    `, [title, description, thumbnail_url, category, instructor_id, is_published || false]);
+
+        res.json(newCourse.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.put('/courses/:id', authMiddleware, roleMiddleware(['instructor', 'admin']), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, description, thumbnail_url, category, is_published } = req.body;
+
+        const courseRes = await db.query('SELECT instructor_id FROM courses WHERE course_id = $1', [id]);
+        if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+        if (courseRes.rows[0].instructor_id !== req.user.user_id && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Not authorized' });
+        }
+
+        const updateRes = await db.query(`
+      UPDATE courses 
+      SET title = $1, description = $2, thumbnail_url = $3, category = $4, is_published = COALESCE($5, is_published)
+      WHERE course_id = $6 RETURNING *
+    `, [title, description, thumbnail_url, category, is_published, id]);
+
+        res.json(updateRes.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.delete('/courses/:id', authMiddleware, roleMiddleware(['instructor', 'admin']), async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const courseRes = await db.query('SELECT instructor_id FROM courses WHERE course_id = $1', [id]);
+        if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+        if (courseRes.rows[0].instructor_id !== req.user.user_id && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Not authorized' });
+        }
+
+        await db.query('DELETE FROM courses WHERE course_id = $1', [id]);
+        res.json({ message: 'Course deleted' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+module.exports = router;
