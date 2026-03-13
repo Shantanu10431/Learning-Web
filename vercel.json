@@ -19,21 +19,16 @@
             "destination": "/antigravity-backend/server.js"
         },
         {
+            "source": "/assets/(.*)",
+            "destination": "/antigravity-frontend/assets/$1"
+        },
+        {
+            "source": "/(.*\\.[a-zA-Z0-9]+)$",
+            "destination": "/antigravity-frontend/$1"
+        },
+        {
             "source": "/(.*)",
-            "destination": "/antigravity-frontend/dist/$1"
-        }
-    ],
-    "routes": [
-        {
-            "handle": "filesystem"
-        },
-        {
-            "src": "/api/(.*)",
-            "dest": "/antigravity-backend/server.js"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/antigravity-frontend/dist/index.html"
+            "destination": "/antigravity-frontend/index.html"
         }
     ]
 }
