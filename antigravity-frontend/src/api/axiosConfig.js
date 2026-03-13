@@ -1,7 +1,8 @@
 import axios from 'axios';
 
+// When on Vercel, the backend is under the same domain at /api, so we use a relative path
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api'),
     withCredentials: true
 });
 

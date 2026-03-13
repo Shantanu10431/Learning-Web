@@ -1,0 +1,26 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "antigravity-frontend/package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "dist"
+            }
+        },
+        {
+            "src": "antigravity-backend/server.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "/antigravity-backend/server.js"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/antigravity-frontend/$1"
+        }
+    ]
+}
