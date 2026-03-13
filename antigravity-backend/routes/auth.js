@@ -58,8 +58,8 @@ router.post('/signup', async (req, res) => {
         setRefreshCookie(res, refreshTokenString);
         res.json({ token: accessToken, user });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
+        console.error('VERCEL SIGNUP ERROR:', err);
+        res.status(500).json({ error: 'Server error', details: err.message, stack: err.stack });
     }
 });
 
@@ -79,8 +79,8 @@ router.post('/login', async (req, res) => {
         setRefreshCookie(res, refreshTokenString);
         res.json({ token: accessToken, user: { user_id: user.user_id, name: user.name, email: user.email, role: user.role } });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
+        console.error('VERCEL LOGIN ERROR:', err);
+        res.status(500).json({ error: 'Server error', details: err.message, stack: err.stack });
     }
 });
 
