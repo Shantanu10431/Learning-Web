@@ -22,5 +22,18 @@
             "source": "/(.*)",
             "destination": "/antigravity-frontend/$1"
         }
+    ],
+    "routes": [
+        {
+            "handle": "filesystem"
+        },
+        {
+            "src": "/api/(.*)",
+            "dest": "/antigravity-backend/server.js"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/antigravity-frontend/index.html"
+        }
     ]
 }
