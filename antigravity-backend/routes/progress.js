@@ -4,19 +4,46 @@ const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.post('/progress/complete', authMiddleware, async (req, res) => {
+router.post('/progress/:lessonId', authMiddleware, async (req, res) => {
     try {
-        const { course_id, lesson_id } = req.body;
+        const { lessonId } = req.params;
+        const { course_id, last_position_seconds, is_completed } = req.body;
         const student_id = req.user.user_id;
 
+        const updateStatus = is_completed ? 'completed' : 'in_progress';
+
         await db.query(`
-      INSERT INTO progress (student_id, course_id, lesson_id, status, completed_at)
-      VALUES ($1, $2, $3, 'completed', CURRENT_TIMESTAMP)
-      ON CONFLICT (student_id, lesson_id) 
-      DO UPDATE SET status = 'completed', completed_at = CURRENT_TIMESTAMP
-    `, [student_id, course_id, lesson_id]);
+            INSERT INTO progress (student_id, course_id, lesson_id, status, last_position_seconds, completed_at)
+            VALUES ($1, $2, $3, $4, $5, CASE WHEN $4::lesson_status = 'completed' THEN CURRENT_TIMESTAMP ELSE NULL END)
+            ON CONFLICT (student_id, lesson_id)
+            DO UPDATE SET 
+                last_position_seconds = EXCLUDED.last_position_seconds,
+                status = CASE WHEN EXCLUDED.status = 'completed' THEN 'completed' ELSE progress.status END,
+                completed_at = CASE WHEN EXCLUDED.status = 'completed' AND progress.status != 'completed' THEN CURRENT_TIMESTAMP ELSE progress.completed_at END
+        `, [student_id, course_id, lessonId, updateStatus, last_position_seconds || 0]);
 
         res.json({ success: true });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.get('/progress/videos/:lessonId', authMiddleware, async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+        const studentId = req.user.user_id;
+        const progressRes = await db.query(
+            "SELECT last_position_seconds, status FROM progress WHERE student_id = $1 AND lesson_id = $2",
+            [studentId, lessonId]
+        );
+        if (progressRes.rows.length === 0) {
+            return res.json({ last_position_seconds: 0, is_completed: false });
+        }
+        res.json({
+            last_position_seconds: progressRes.rows[0].last_position_seconds,
+            is_completed: progressRes.rows[0].status === 'completed'
+        });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Server error' });

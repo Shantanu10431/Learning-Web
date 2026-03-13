@@ -145,10 +145,52 @@ router.delete('/lessons/:id', authMiddleware, roleMiddleware(['instructor', 'adm
 router.get('/lessons/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const lessonRes = await db.query('SELECT * FROM lessons WHERE lesson_id = $1', [id]);
+        const studentId = req.user.user_id;
+
+        const lessonRes = await db.query(`
+            SELECT l.*, s.course_id 
+            FROM lessons l
+            JOIN sections s ON l.section_id = s.section_id
+            WHERE lesson_id = $1
+        `, [id]);
         if (lessonRes.rows.length === 0) return res.status(404).json({ error: 'Lesson not found' });
 
-        res.json(lessonRes.rows[0]);
+        const currentLesson = lessonRes.rows[0];
+        const courseId = currentLesson.course_id;
+
+        const allLessonsRes = await db.query(`
+            SELECT l.lesson_id, p.status
+            FROM lessons l
+            JOIN sections s ON l.section_id = s.section_id
+            LEFT JOIN progress p ON l.lesson_id = p.lesson_id AND p.student_id = $2
+            WHERE s.course_id = $1
+            ORDER BY s.order_number, l.order_number
+        `, [courseId, studentId]);
+
+        const allLessons = allLessonsRes.rows;
+        let locked = false;
+        let previous_lesson_id = null;
+        let next_lesson_id = null;
+
+        for (let i = 0; i < allLessons.length; i++) {
+            if (allLessons[i].lesson_id === id) {
+                if (i > 0) {
+                    previous_lesson_id = allLessons[i - 1].lesson_id;
+                    locked = allLessons[i - 1].status !== 'completed';
+                }
+                if (i < allLessons.length - 1) {
+                    next_lesson_id = allLessons[i + 1].lesson_id;
+                }
+                break;
+            }
+        }
+
+        res.json({
+            ...currentLesson,
+            locked,
+            previous_lesson_id,
+            next_lesson_id
+        });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Server error' });

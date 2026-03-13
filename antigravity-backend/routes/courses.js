@@ -59,6 +59,64 @@ router.get('/courses/:id', async (req, res) => {
     }
 });
 
+router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const studentId = req.user.user_id;
+
+        const courseRes = await db.query(`
+      SELECT c.*, u.name as instructor_name 
+      FROM courses c 
+      JOIN users u ON c.instructor_id = u.user_id 
+      WHERE c.course_id = $1
+    `, [id]);
+
+        if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+        const course = courseRes.rows[0];
+
+        const sectionsRes = await db.query('SELECT * FROM sections WHERE course_id = $1 ORDER BY order_number', [id]);
+        const sectionIds = sectionsRes.rows.map(s => s.section_id);
+
+        let lessons = [];
+        if (sectionIds.length > 0) {
+            const lessonsRes = await db.query(`
+                SELECT l.*, 
+                       s.order_number as sec_order,
+                       EXISTS(SELECT 1 FROM progress p WHERE p.lesson_id = l.lesson_id AND p.student_id = $2 AND p.status = 'completed') as is_completed
+                FROM lessons l
+                JOIN sections s ON l.section_id = s.section_id
+                WHERE l.section_id = ANY($1) 
+                ORDER BY s.order_number, l.order_number
+            `, [sectionIds, studentId]);
+            lessons = lessonsRes.rows;
+        }
+
+        let previousCompleted = true; // First lesson is unlocked
+        for (let i = 0; i < lessons.length; i++) {
+            lessons[i].locked = !previousCompleted;
+            previousCompleted = lessons[i].is_completed;
+        }
+
+        course.sections = sectionsRes.rows.map(section => ({
+            ...section,
+            lessons: lessons.filter(l => l.section_id === section.section_id).map(l => ({
+                lesson_id: l.lesson_id,
+                title: l.title,
+                youtube_url: l.locked ? null : l.youtube_url,
+                duration_seconds: l.duration_seconds,
+                order_number: l.order_number,
+                is_completed: l.is_completed,
+                locked: l.locked
+            }))
+        }));
+
+        res.json(course);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 router.post('/courses', authMiddleware, roleMiddleware(['instructor', 'admin']), async (req, res) => {
     try {
         const { title, description, thumbnail_url, category, is_published } = req.body;
