@@ -15,6 +15,9 @@ const playlists = [
     { id: 'PLZPZq0r_RZOMhMvvhyL8c1gM-b-02v-H-', price: 49.99, category: 'Web Development', title: 'React JS Full Course' },
     { id: 'PLoYCgNOvdVACAOGSquJ8B_LDE340a6XlO', price: 99.99, category: 'Blockchain', title: 'Web3 and Solidity' },
     { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 29.99, category: 'Programming', title: 'Python for Beginners' },
+    { id: 'PL4cUxeGkcC9gcy9lrvXZ75evwG23M_2Rk', price: 19.99, category: 'CSS & Design', title: 'Tailwind CSS Course' },
+    { id: 'PL-osiE80TeTs4UjLw5MM6OjgkjFeYwxa0', price: 59.99, category: 'Backend Engineering', title: 'Node.js/Express Complete' },
+    { id: 'PLZPZq0r_RZOO1zkgO4bIdfuLpizCeCG5J', price: 89.99, category: 'Databases', title: 'PostgreSQL Advanced' }
 ];
 
 async function seedYouTubeCourses() {
