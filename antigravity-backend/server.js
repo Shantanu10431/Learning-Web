@@ -20,6 +20,15 @@ const enrollmentRoutes = require('./routes/enrollment');
 const progressRoutes = require('./routes/progress');
 
 // Mount Routes
+app.get('/api/debug-env', (req, res) => {
+    res.json({
+        keys: Object.keys(process.env),
+        hasDbUrl: !!process.env.DB_URL,
+        hasJwtSecret: !!process.env.JWT_SECRET,
+        nodeEnv: process.env.NODE_ENV
+    });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api', coursesRoutes);
 app.use('/api', lessonsRoutes);
