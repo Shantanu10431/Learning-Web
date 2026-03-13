@@ -20,7 +20,7 @@
         },
         {
             "source": "/(.*)",
-            "destination": "/antigravity-frontend/$1"
+            "destination": "/antigravity-frontend/dist/$1"
         }
     ],
     "routes": [
@@ -33,7 +33,7 @@
         },
         {
             "src": "/(.*)",
-            "dest": "/antigravity-frontend/index.html"
+            "dest": "/antigravity-frontend/dist/index.html"
         }
     ]
 }
