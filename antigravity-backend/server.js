@@ -25,6 +25,7 @@ app.get('/api/debug-env', (req, res) => {
         keys: Object.keys(process.env),
         hasDbUrl: !!process.env.DB_URL,
         hasJwtSecret: !!process.env.JWT_SECRET,
+        hasJwtSecret3: !!process.env.JWT_SECRET3,
         nodeEnv: process.env.NODE_ENV
     });
 });

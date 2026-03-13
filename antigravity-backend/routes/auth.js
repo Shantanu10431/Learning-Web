@@ -10,7 +10,7 @@ const router = express.Router();
 const generateTokens = async (userId, email, role) => {
     const accessToken = jwt.sign(
         { user_id: userId, email, role },
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET3,
         { expiresIn: '15m' }
     );
 
