@@ -84,8 +84,39 @@ app.get('/api/debug-env', (req, res) => {
         hasDbUrl: !!process.env.DB_URL,
         hasJwtSecret: !!process.env.JWT_SECRET,
         hasJwtSecret3: !!process.env.JWT_SECRET3,
+        hasYoutubeKey: !!process.env.YOUTUBE_API_KEY,
+        youtubeKeyPrefix: process.env.YOUTUBE_API_KEY ? process.env.YOUTUBE_API_KEY.substring(0, 10) : null,
         nodeEnv: process.env.NODE_ENV
     });
+});
+
+// Test YouTube API key
+app.get('/api/test-youtube', async (req, res) => {
+    try {
+        const axios = require('axios');
+        const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
+        if (!YOUTUBE_API_KEY) {
+            return res.json({ success: false, error: 'No API key configured' });
+        }
+
+        // Test with a simple API call
+        const testRes = await axios.get(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&q=test&maxResults=1&key=${YOUTUBE_API_KEY}`
+        );
+
+        res.json({
+            success: true,
+            message: 'YouTube API key is working!',
+            quotaInfo: testRes.data
+        });
+    } catch (err) {
+        res.json({
+            success: false,
+            error: err.message,
+            response: err.response?.data
+        });
+    }
 });
 
 // Seed courses from YouTube API - REAL PLAYLISTS
