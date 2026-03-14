@@ -247,6 +247,26 @@ app.get('/api/admin/students/:id', async (req, res) => {
     }
 });
 
+// Get all users (for admin)
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT 
+                u.user_id, u.name, u.email, u.role, u.created_at,
+                COUNT(DISTINCT e.enrollment_id) as enrolled_courses,
+                COUNT(DISTINCT c.course_id) as created_courses
+            FROM users u
+            LEFT JOIN enrollments e ON u.user_id = e.student_id
+            LEFT JOIN courses c ON u.user_id = c.instructor_id
+            GROUP BY u.user_id, u.name, u.email, u.role, u.created_at
+            ORDER BY u.created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Mount API routes
 app.use('/api/auth', authRoutes);
 app.use('/api', coursesRoutes);

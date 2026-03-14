@@ -13,8 +13,8 @@ const ProfileHoverCard = ({ user, onLogout }) => {
             {/* Hover Card - appears on hover */}
             <div
                 className={`absolute right-0 top-full mt-2 w-72 bg-slate-800 rounded-xl border border-slate-700 shadow-2xl overflow-hidden transform transition-all duration-300 origin-top-right ${isHovered
-                        ? 'opacity-100 scale-100 translate-y-0 visible'
-                        : 'opacity-0 scale-95 -translate-y-2 invisible'
+                    ? 'opacity-100 scale-100 translate-y-0 visible'
+                    : 'opacity-0 scale-95 -translate-y-2 invisible'
                     }`}
                 style={{ zIndex: 9999 }}
             >
@@ -40,10 +40,10 @@ const ProfileHoverCard = ({ user, onLogout }) => {
                                 {user?.name || 'User'}
                             </h3>
                             <p className="text-orange-400 text-sm font-medium truncate">
-                                {user?.role === 'instructor' ? 'KOD-VTU-INTERN' : 'STUDENT'}
+                                {user?.role === 'instructor' ? 'ADVANCED INSTRUCTOR' : 'ADVANCED LEARNER'}
                             </p>
-                            <p className="text-yellow-400 text-xs font-medium">
-                                BATCH2
+                            <p className="text-indigo-400 text-xs font-medium">
+                                Batch 2026
                             </p>
                         </div>
                     </div>

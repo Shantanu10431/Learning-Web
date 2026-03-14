@@ -56,8 +56,8 @@ const Navigation = () => {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <h3 className="text-white font-bold text-lg truncate">{user?.name || 'User'}</h3>
-                                                <p className="text-orange-400 text-sm font-medium truncate">{user?.role === 'instructor' ? 'KOD-VTU-INTERN' : 'STUDENT'}</p>
-                                                <p className="text-yellow-400 text-xs font-medium">BATCH2</p>
+                                                <p className="text-orange-400 text-sm font-medium truncate">{user?.role === 'instructor' ? 'ADVANCED INSTRUCTOR' : 'ADVANCED LEARNER'}</p>
+                                                <p className="text-indigo-400 text-xs font-medium">Batch 2026</p>
                                             </div>
                                         </div>
                                     </div>
