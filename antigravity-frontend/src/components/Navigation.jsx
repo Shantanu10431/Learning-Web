@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { BookOpen, User } from 'lucide-react';
+import { BookOpen, User, LogOut } from 'lucide-react';
 import ProfileHoverCard from './ProfileHoverCard';
 
 const Navigation = () => {
@@ -34,15 +34,50 @@ const Navigation = () => {
                                 Dashboard
                             </Link>
 
-                            {/* Hover Profile Card - clickable to profile */}
-                            <div className="relative">
+                            {/* Profile with Hover Card */}
+                            <div className="relative group">
                                 <Link
                                     to="/profile"
-                                    className="text-indigo-400 hover:text-indigo-300 flex items-center gap-2 font-medium transition-colors cursor-pointer"
+                                    className="text-indigo-400 hover:text-indigo-300 flex items-center gap-2 font-medium transition-colors"
                                 >
                                     <User size={18} /> {user.name}
                                 </Link>
-                                <ProfileHoverCard user={user} onLogout={handleLogout} />
+                                {/* Hover Dropdown */}
+                                <div className="absolute right-0 top-full mt-2 w-72 bg-slate-800 rounded-xl border border-slate-700 shadow-2xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-50">
+                                    {/* Card Header */}
+                                    <div className="p-4 bg-gradient-to-r from-indigo-900/50 to-slate-800 border-b border-slate-700">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-14 h-14 rounded-full bg-slate-700 border-2 border-white flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                {user?.profile_image_url ? (
+                                                    <img src={user.profile_image_url} alt={user.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <User size={28} className="text-slate-400" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-white font-bold text-lg truncate">{user?.name || 'User'}</h3>
+                                                <p className="text-orange-400 text-sm font-medium truncate">{user?.role === 'instructor' ? 'KOD-VTU-INTERN' : 'STUDENT'}</p>
+                                                <p className="text-yellow-400 text-xs font-medium">BATCH2</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Status */}
+                                    <div className="px-4 py-3 border-b border-slate-700">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                                            <span className="text-blue-400 text-sm font-medium">Offline</span>
+                                        </div>
+                                    </div>
+                                    {/* Actions */}
+                                    <div className="p-3 bg-slate-800/50 flex gap-2">
+                                        <Link to="/profile" className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium text-sm">
+                                            <User size={16} /> View Profile
+                                        </Link>
+                                        <button onClick={handleLogout} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors font-medium text-sm">
+                                            <LogOut size={16} />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ) : (
