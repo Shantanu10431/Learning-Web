@@ -102,7 +102,7 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
             lessons: lessons.filter(l => l.section_id === section.section_id).map(l => ({
                 lesson_id: l.lesson_id,
                 title: l.title,
-                youtube_url: l.locked ? null : l.youtube_url,
+                youtube_url: l.youtube_url, // Never nullify the URL, let the frontend handle lock states
                 duration_seconds: l.duration_seconds,
                 order_number: l.order_number,
                 is_completed: l.is_completed,
