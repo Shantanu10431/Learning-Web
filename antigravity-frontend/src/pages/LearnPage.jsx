@@ -47,7 +47,10 @@ const LearnPage = () => {
                 let targetLessonId = lessonId;
                 if (!targetLessonId) {
                     targetLessonId = courseRes.data.sections?.[0]?.lessons?.[0]?.lesson_id;
-                    if (targetLessonId) navigate(`/learn/${courseId}/${targetLessonId}`, { replace: true });
+                    if (targetLessonId) {
+                        navigate(`/learn/${courseId}/${targetLessonId}`, { replace: true });
+                        return;
+                    }
                 }
 
                 if (targetLessonId) {

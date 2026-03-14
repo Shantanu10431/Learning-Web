@@ -173,7 +173,7 @@ router.get('/lessons/:id', authMiddleware, async (req, res) => {
         let next_lesson_id = null;
 
         for (let i = 0; i < allLessons.length; i++) {
-            if (allLessons[i].lesson_id === id) {
+            if (String(allLessons[i].lesson_id) === String(id)) {
                 if (i > 0) {
                     previous_lesson_id = allLessons[i - 1].lesson_id;
                     locked = allLessons[i - 1].status !== 'completed';

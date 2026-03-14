@@ -1,38 +1,31 @@
-const axios = require('axios');
+const api = require('axios');
 
-async function testFlow() {
-    console.log('--- Starting API End-to-End Test ---');
-    try {
-        const api = axios.create({ baseURL: 'http://localhost:5000/api' });
+async function test() {
+    const origin = 'http://localhost:5000/api';
+    // 1. register
+    const regResp = await api.post(`${origin}/auth/register`, {
+        name: 'Testy',
+        email: `testy_${Date.now()}@test.com`,
+        password: 'password123',
+        role: 'student'
+    });
+    const token = regResp.data.token;
+    const headers = { Authorization: `Bearer ${token}` };
 
-        console.log('1. Registering new Instructor user...');
-        const signupRes = await api.post('/auth/signup', {
-            name: 'Test Instructor',
-            email: 'instructor@test.com',
-            password: 'password123',
-            role: 'instructor'
-        });
-        const token = signupRes.data.token;
-        console.log('Signup Success! Token received.');
-
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-        console.log('2. Creating a new Course...');
-        const courseRes = await api.post('/courses', {
-            title: 'Antigravity Masterclass',
-            description: 'Learn how to build an LMS from scratch.',
-            category: 'Software Engineering'
-        });
-        const courseId = courseRes.data.course_id;
-        console.log(`Course Created! ID: ${courseId}`);
-
-        console.log('3. Fetching published courses...');
-        const allCourses = await api.get('/courses');
-        console.log(`Found ${allCourses.data.length} published courses.`);
-
-    } catch (err) {
-        console.error('API Test Failed:', err.response?.data || err.message);
+    // 2. get courses 
+    const coursesResp = await api.get(`${origin}/courses`);
+    const course = coursesResp.data[0];
+    if (!course) {
+        console.log("No courses found!");
+        return;
     }
-}
+    const courseId = course.course_id;
 
-testFlow();
+    // 3. fake a payment completion to enroll
+    await api.post(`${origin}/enroll/${courseId}`, {}, { headers });
+    // we must simulate payment completed. In server.js auto-migration actually completes pending enrollments. 
+    // Let's just create an enrollment and query the db to set it to completed if needed, or see if it defaults.
+
+    // Actually, we can just rely on the existing courses/tree route.
+}
+test();
