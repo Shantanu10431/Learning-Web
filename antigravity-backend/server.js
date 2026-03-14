@@ -83,20 +83,14 @@ app.get('/api/seed-youtube', async (req, res) => {
         }
         const instructorId = adminRes.rows[0].user_id;
 
-        // Real YouTube playlist IDs from popular channels
+        // Real YouTube playlist IDs from popular coding channels
         const playlists = [
-            { id: 'PLZPZq0r_RZOMhMvvhyL8c1gM-b-02v-H-', price: 499, category: 'Web Development', title: 'React JS Full Course' },
-            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 399, category: 'Python', title: 'Python for Beginners' },
-            { id: 'PL4cUxeGkcC9gcy9lrvXZ75evwG23M_2Rk', price: 299, category: 'CSS', title: 'Tailwind CSS Course' },
-            { id: 'PL-osiE80TeTs4UjLw5MM6OjgkjFeYwxa0', price: 599, category: 'Backend', title: 'Node.js Express Complete' },
-            { id: 'PLhQjrBD2T382eZ9cN-A4vJ5F8GJkXzdJT', price: 499, category: 'Java', title: 'Java Programming Complete' },
-            { id: 'PL9l9RlPsqXPrE-8YXKqIaR6x4PAV1vR7D', price: 599, category: 'Data Science', title: 'Python Data Science' },
-            { id: 'PLWPir5ht0DrK4zS2m8_7xSg8L_U5iD7C1', price: 699, category: 'Machine Learning', title: 'Machine Learning A-Z' },
-            { id: 'PLDzePZW-cLsHNNVkl8NR2dI-S5glFAaz6', price: 0, category: 'C++', title: 'C++ Complete Course' },
-            { id: 'PLlyCy4nJaCt8yPVx7tK0oQt6zMv5U6H0M', price: 299, category: 'JavaScript', title: 'JavaScript DSA' },
-            { id: 'PLtBuK3qNoYdpN6Tfp4P4_c7cCYH4q2K4M', price: 399, category: 'Django', title: 'Django Python Course' },
-            { id: 'PLW8X9K4H7J6T5R3N2V6C4B7A8Z9Y1X2', price: 599, category: 'React Native', title: 'React Native Complete' },
-            { id: 'PLT5K7Y6N8H9J8K4M3L2W5X6V7C9B8A7', price: 0, category: 'DevOps', title: 'Docker Kubernetes Course' }
+            { id: 'PLWKjhJtqVAblfum5WiQblKPwIbqYXkDoC', price: 0, category: 'Web Development', title: 'Frontend Web Development Bootcamp' },
+            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 0, category: 'Python', title: 'Python 100 Days - Complete Course' },
+            { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 0, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
+            { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 0, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
+            { id: 'PL4cUxeGkcC9gcy9lrvXZ75evwG23M_2Rk', price: 299, category: 'CSS', title: 'Tailwind CSS Complete Course' },
+            { id: 'PL-osiE80TeTs4UjLw5MM6OjgkjFeYwxa0', price: 499, category: 'Backend', title: 'Node.js Express Complete Guide' }
         ];
 
         let coursesAdded = 0;
@@ -308,12 +302,14 @@ const autoSeedCourses = async () => {
         }
         const instructorId = adminRes.rows[0].user_id;
 
-        // Real YouTube playlist IDs
+        // Real YouTube playlist IDs from popular coding channels
         const playlists = [
-            { id: 'PLZPZq0r_RZOMhMvvhyL8c1gM-b-02v-H-', price: 499, category: 'Web Development', title: 'React JS Full Course' },
-            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 399, category: 'Python', title: 'Python for Beginners' },
-            { id: 'PL4cUxeGkcC9gcy9lrvXZ75evwG23M_2Rk', price: 299, category: 'CSS', title: 'Tailwind CSS Course' },
-            { id: 'PL-osiE80TeTs4UjLw5MM6OjgkjFeYwxa0', price: 599, category: 'Backend', title: 'Node.js Express Complete' }
+            { id: 'PLWKjhJtqVAblfum5WiQblKPwIbqYXkDoC', price: 0, category: 'Web Development', title: 'Frontend Web Development Bootcamp' },
+            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 0, category: 'Python', title: 'Python 100 Days - Complete Course' },
+            { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 0, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
+            { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 0, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
+            { id: 'PL4cUxeGkcC9gcy9lrvXZ75evwG23M_2Rk', price: 299, category: 'CSS', title: 'Tailwind CSS Complete Course' },
+            { id: 'PL-osiE80TeTs4UjLw5MM6OjgkjFeYwxa0', price: 499, category: 'Backend', title: 'Node.js Express Complete Guide' }
         ];
 
         let coursesAdded = 0;
