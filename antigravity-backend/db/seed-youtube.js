@@ -10,7 +10,7 @@ const pool = new Pool({
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-// predefined playlists for course injection
+// predefined playlists for course injection - Real YouTube Playlists
 const playlists = [
     // Original courses
     { id: 'PLZPZq0r_RZOMhMvvhyL8c1gM-b-02v-H-', price: 49.99, category: 'Web Development', title: 'React JS Full Course' },
@@ -18,25 +18,7 @@ const playlists = [
     { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 29.99, category: 'Programming', title: 'Python for Beginners' },
     { id: 'PL4cUxeGkcC9gcy9lrvXZ75evwG23M_2Rk', price: 19.99, category: 'CSS & Design', title: 'Tailwind CSS Course' },
     { id: 'PL-osiE80TeTs4UjLw5MM6OjgkjFeYwxa0', price: 59.99, category: 'Backend Engineering', title: 'Node.js/Express Complete' },
-    { id: 'PLZPZq0r_RZOO1zkgO4bIdfuLpizCeCG5J', price: 89.99, category: 'Databases', title: 'PostgreSQL Advanced' },
-    // New coding courses from different instructors
-    { id: 'PLhQjrBD2T382eZ9cN-A4vJ5F8GJkXzdJT', price: 39.99, category: 'Java', title: 'Java Programming Complete' },
-    { id: 'PL9l9RlPsqXPrE-8YXKqIaR6x4PAV1vR7D', price: 34.99, category: 'Data Science', title: 'Python for Data Science' },
-    { id: 'PLWPir5ht0DrK4zS2m8_7xSg8L_U5iD7C1', price: 44.99, category: 'Machine Learning', title: 'Machine Learning A-Z' },
-    { id: 'PLDzePZW-cLsHNNVkl8NR2dI-S5glFAaz6', price: 0, category: 'Programming', title: 'C++ Complete Course' },
-    { id: 'PLlyCy4nJaCt8yPVx7tK0oQt6zMv5U6H0M', price: 24.99, category: 'JavaScript', title: 'JavaScript Algorithms & DSA' },
-    { id: 'PLvE-p8q0H9QkG2Y0a4lZ0fQX6Y4a5k6W8', price: 0, category: 'Mobile Development', title: 'Flutter Complete Guide' },
-    { id: 'PLy5npd6mzmvYxPqyJ0N3XSV-0X5yF3qZ_', price: 54.99, category: 'DevOps', title: 'AWS Cloud Practitioner' },
-    { id: 'PL4zEwJMs0Mv1y5MTXhX8G4oE7hX3v7k2', price: 0, category: 'Web Development', title: 'HTML CSS JavaScript Crash Course' },
-    { id: 'PLtBuK3qNoYdpN6Tfp4P4_c7cCYH4q2K4M', price: 29.99, category: 'Backend', title: 'Django Python Web Development' },
-    { id: 'PLwG3tNKsK3O0MkW8qQvj4N8YqXqYqYqYq', price: 39.99, category: 'UI/UX Design', title: 'Figma Complete Course' },
-    { id: 'PLd-m9l8mN3P4Y7w8x9Y2Z3X4V5C6B7A8', price: 0, category: 'Programming', title: 'JavaScript Interview Preparation' },
-    { id: 'PL8p2g5N4M4Y7x6T9R3qZ5Y8J2K4N6M8P', price: 19.99, category: 'Web Development', title: 'Next.js Full Stack Course' },
-    { id: 'PLQqH4Y6N7Y9k8T7R2W3X4V5C6B7A8Z9', price: 0, category: 'Programming', title: 'TypeScript Masterclass' },
-    { id: 'PLR6Y3H5Y8J7W4X2K9T8V5C6B7A9Z8Y7', price: 49.99, category: 'Mobile Development', title: 'React Native Complete Guide' },
-    { id: 'PLT5K7Y6N8H9J8K4M3L2W5X6V7C9B8A7', price: 0, category: 'DevOps', title: 'Docker & Kubernetes Course' },
-    { id: 'PLW8X9K4H7J6T5R3N2V6C4B7A8Z9Y1X2', price: 34.99, category: 'Backend', title: 'Go Programming Language' },
-    { id: 'PLU9K6H3Y2W4V8C3B7A9Z5X2Y1T6R4Q8', price: 0, category: 'Programming', title: 'DSA Problem Solving' }
+    { id: 'PLZPZq0r_RZOO1zkgO4bIdfuLpizCeCG5J', price: 89.99, category: 'Databases', title: 'PostgreSQL Advanced' }
 ];
 
 async function seedYouTubeCourses() {
