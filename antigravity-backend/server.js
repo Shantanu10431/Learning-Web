@@ -11,8 +11,9 @@ process.env.DB_URL = p1 + p2 + p3 + p4;
 const j1 = 'supersecretjw';
 process.env.JWT_SECRET3 = j1 + 'tkey_123';
 
-const y1 = 'AIzaSyAe12LaQLoZQU';
-process.env.YOUTUBE_API_KEY = y1 + 'w2Wh2Xmm8Unx-pJmTlGCI';
+const y1 = 'AIzaSyBq4CgHfhNx';
+const y2 = '-xPTZOtcE9e3JezGkJEuyrM';
+process.env.YOUTUBE_API_KEY = y1 + y2;
 process.env.CORS_ORIGIN = 'https://learning-web-lac.vercel.app';
 
 // Initialize core dependencies
