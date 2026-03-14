@@ -13,11 +13,17 @@ const CourseListing = () => {
     useEffect(() => {
         const fetchCourses = async () => {
             try {
+                console.log('Fetching courses from /courses');
                 const res = await api.get('/courses');
+                console.log('Courses response:', res.data);
                 setCourses(res.data);
                 setFilteredCourses(res.data);
             } catch (err) {
-                console.error(err);
+                console.error('Error fetching courses:', err);
+                if (err.response) {
+                    console.error('Response data:', err.response.data);
+                    console.error('Response status:', err.response.status);
+                }
             }
             setLoading(false);
         };
