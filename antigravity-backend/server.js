@@ -474,6 +474,55 @@ app.use('/api', lessonsRoutes);
 app.use('/api', enrollmentRoutes);
 app.use('/api', progressRoutes);
 
+// Quick seed endpoint - adds 5 courses immediately
+app.get('/api/seed-now', async (req, res) => {
+    try {
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            connectionString: process.env.DB_URL,
+            ssl: { rejectUnauthorized: false }
+        });
+
+        // Get or create instructor
+        let adminRes = await pool.query('SELECT user_id FROM users WHERE role = $1 LIMIT 1', ['instructor']);
+        if (adminRes.rows.length === 0) {
+            adminRes = await pool.query(`
+                INSERT INTO users (name, email, password_hash, role) 
+                VALUES ('Platform AI', 'ai@antigravity.io', 'hashed', 'instructor') 
+                RETURNING user_id
+            `);
+        }
+        const instructorId = adminRes.rows[0].user_id;
+
+        const courses = [
+            { title: 'Python Programming', desc: 'Learn Python from scratch', cat: 'Python', price: 1999 },
+            { title: 'JavaScript Mastery', desc: 'Master JavaScript', cat: 'JavaScript', price: 1499 },
+            { title: 'React JS Guide', desc: 'Build web apps', cat: 'Web Dev', price: 2999 },
+            { title: 'Node.js Backend', desc: 'Learn backend', cat: 'Backend', price: 2499 },
+            { title: 'CSS & Tailwind', desc: 'Master CSS', cat: 'CSS', price: 999 }
+        ];
+
+        for (const c of courses) {
+            const cr = await pool.query(`
+                INSERT INTO courses (title, description, thumbnail_url, category, price, instructor_id, is_published)
+                VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING course_id
+            `, [c.title, c.desc, 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800', c.cat, c.price, instructorId]);
+
+            const sr = await pool.query(`INSERT INTO sections (course_id, title, order_number) VALUES ($1, 'Modules', 1) RETURNING section_id`, [cr.rows[0].course_id]);
+
+            for (let i = 1; i <= 5; i++) {
+                await pool.query(`INSERT INTO lessons (section_id, title, youtube_url, order_number) VALUES ($1, $2, $3, $4)`,
+                    [sr.rows[0].section_id, `Lesson ${i}`, 'https://www.youtube.com/watch?v=eWRfhZUzrAc', i]);
+            }
+        }
+
+        await pool.end();
+        res.json({ success: true, message: 'Added 5 courses!' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Auto-seed courses on startup (always runs)
 const autoSeedCourses = async () => {
     try {
