@@ -36,12 +36,18 @@ const CourseDetails = () => {
     }, [id, user]);
 
     const handleEnroll = async () => {
+        console.log('Enroll clicked, user:', user, 'course price:', course.price);
+
         if (!user) {
             navigate('/login');
             return;
         }
 
-        if (course.price > 0) {
+        const price = parseFloat(course.price) || 0;
+        console.log('Parsed price:', price);
+
+        if (price > 0) {
+            console.log('Opening payment modal');
             setIsPaymentModalOpen(true);
             return;
         }
@@ -50,20 +56,28 @@ const CourseDetails = () => {
     };
 
     const processEnrollment = async () => {
+        console.log('Processing enrollment for course:', id);
         setEnrolling(true);
         try {
+            const price = parseFloat(course.price) || 0;
+            console.log('Course price:', price);
+
             // For free courses, enroll directly
-            if (!course.price || course.price === 0) {
+            if (price === 0) {
+                console.log('Enrolling in free course');
                 await api.post(`/enroll/${id}`);
                 setIsEnrolled(true);
+            } else {
+                console.log('Course is paid, opening payment modal');
+                setIsPaymentModalOpen(true);
             }
         } catch (err) {
-            console.error(err);
+            console.error('Enrollment error:', err);
             // Check if already enrolled
             if (err.response?.data?.error === 'Already enrolled and paid' || err.response?.data?.message === 'Already enrolled and paid') {
                 setIsEnrolled(true);
             } else {
-                alert('Failed to enroll');
+                alert('Failed to enroll: ' + (err.response?.data?.error || err.message));
             }
         }
         setEnrolling(false);
@@ -72,12 +86,14 @@ const CourseDetails = () => {
 
     // Handle successful payment
     const handlePaymentComplete = async () => {
+        console.log('Payment completed, recording payment');
         try {
             // Record payment
-            await api.post(`/record-payment/${id}`, {
+            const response = await api.post(`/record-payment/${id}`, {
                 paymentId: `PAY${Date.now()}`,
                 amount: course.price
             });
+            console.log('Payment recorded:', response.data);
             setIsEnrolled(true);
             setIsPaymentModalOpen(false);
         } catch (err) {
@@ -92,6 +108,10 @@ const CourseDetails = () => {
     if (!course) return <div className="p-8 text-red-400">Course not found.</div>;
 
     const totalLessons = course.sections?.reduce((sum, sec) => sum + (sec.lessons?.length || 0), 0) || 0;
+    const price = parseFloat(course.price) || 0;
+    const isPaidCourse = price > 0;
+
+    console.log('Rendering - price:', price, 'isPaidCourse:', isPaidCourse, 'isEnrolled:', isEnrolled);
 
     return (
         <div className="py-12 px-6">
@@ -144,7 +164,7 @@ const CourseDetails = () => {
                 <div>
                     <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 sticky top-6">
                         <div className="text-3xl font-bold text-white mb-6">
-                            {isEnrolled ? "You're Enrolled!" : (course.price > 0 ? `₹${course.price}` : "Free Enrollment")}
+                            {isEnrolled ? "You're Enrolled!" : (isPaidCourse ? `₹${price.toFixed(0)}` : "Free Enrollment")}
                         </div>
 
                         {isEnrolled ? (
@@ -153,7 +173,7 @@ const CourseDetails = () => {
                             </Link>
                         ) : user ? (
                             <button onClick={handleEnroll} disabled={enrolling} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-4 px-4 rounded-lg transition-colors text-lg flex items-center justify-center">
-                                {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                                {enrolling ? 'Enrolling...' : (isPaidCourse ? 'Buy Now' : 'Enroll for Free')}
                             </button>
                         ) : (
                             <Link to="/login" className="block text-center w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 px-4 rounded-lg transition-colors text-lg">

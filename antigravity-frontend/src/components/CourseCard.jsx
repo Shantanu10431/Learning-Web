@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const CourseCard = ({ course }) => {
+    const price = parseFloat(course.price) || 0;
+
     return (
         <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 hover:border-indigo-500 transition-colors">
             <img src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop'} alt={course.title} className="w-full h-48 object-cover" />
@@ -13,7 +15,7 @@ const CourseCard = ({ course }) => {
                     <div className="flex flex-col">
                         <span className="text-sm text-slate-500">By {course.instructor_name}</span>
                         <span className="text-lg font-bold text-emerald-400 mt-1">
-                            {course.price > 0 ? `₹${course.price}` : 'Free'}
+                            {price > 0 ? `₹${price.toFixed(0)}` : 'Free'}
                         </span>
                     </div>
                     <Link to={`/courses/${course.course_id}`} className="text-indigo-400 hover:text-indigo-300 font-medium text-sm bg-indigo-600/10 px-3 py-2 rounded-lg mt-1">View Details</Link>
