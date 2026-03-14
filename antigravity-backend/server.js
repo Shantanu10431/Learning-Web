@@ -26,7 +26,18 @@ const lessonsRoutes = require('./routes/lessons');
 const enrollmentRoutes = require('./routes/enrollment');
 const progressRoutes = require('./routes/progress');
 
+const db = require('./db/pool');
+
 // Mount Routes
+app.get('/api/health', async (req, res) => {
+    try {
+        const result = await db.query('SELECT NOW()');
+        res.json({ status: 'ok', database: 'connected', time: result.rows[0].now });
+    } catch (err) {
+        res.status(500).json({ status: 'error', database: 'disconnected', error: err.message });
+    }
+});
+
 app.get('/api/debug-env', (req, res) => {
     res.json({
         keys: Object.keys(process.env),
