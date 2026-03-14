@@ -58,6 +58,7 @@ app.get('/api/debug-env', (req, res) => {
 });
 
 // Seed courses from YouTube API - REAL PLAYLISTS
+// Use ?force=true to re-seed even if courses exist
 app.get('/api/seed-youtube', async (req, res) => {
     try {
         const axios = require('axios');
@@ -68,8 +69,28 @@ app.get('/api/seed-youtube', async (req, res) => {
         });
 
         const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+        const force = req.query.force === 'true';
+
         if (!YOUTUBE_API_KEY) {
             return res.status(500).json({ error: 'YouTube API key not configured' });
+        }
+
+        // Check existing courses (skip if not forcing)
+        if (!force) {
+            const checkRes = await pool.query('SELECT COUNT(*) FROM courses');
+            if (parseInt(checkRes.rows[0].count) > 0) {
+                await pool.end();
+                return res.json({ success: true, message: 'Courses already exist. Use ?force=true to re-seed.' });
+            }
+        }
+
+        // Clear existing courses if forcing
+        if (force) {
+            await pool.query('DELETE FROM progress');
+            await pool.query('DELETE FROM lessons');
+            await pool.query('DELETE FROM sections');
+            await pool.query('DELETE FROM enrollments');
+            await pool.query('DELETE FROM courses');
         }
 
         // Get or create instructor
