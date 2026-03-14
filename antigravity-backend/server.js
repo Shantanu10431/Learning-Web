@@ -46,7 +46,19 @@ app.get('/api/health', async (req, res) => {
         // Get counts
         const userCount = await db.query('SELECT COUNT(*) FROM users');
         const courseCount = await db.query('SELECT COUNT(*) FROM courses');
+        const sectionCount = await db.query('SELECT COUNT(*) FROM sections');
+        const lessonCount = await db.query('SELECT COUNT(*) FROM lessons');
         const enrollmentCount = await db.query('SELECT COUNT(*) FROM enrollments');
+
+        // Get sample courses with lesson counts
+        const courses = await db.query(`
+            SELECT c.course_id, c.title, c.category, c.is_published,
+                   (SELECT COUNT(*) FROM sections WHERE course_id = c.course_id) as sections,
+                   (SELECT COUNT(*) FROM lessons l WHERE l.section_id IN (SELECT section_id FROM sections WHERE course_id = c.course_id)) as lessons
+            FROM courses c 
+            ORDER BY c.created_at DESC 
+            LIMIT 10
+        `);
 
         res.json({
             status: 'ok',
@@ -55,8 +67,11 @@ app.get('/api/health', async (req, res) => {
             counts: {
                 users: userCount.rows[0].count,
                 courses: courseCount.rows[0].count,
+                sections: sectionCount.rows[0].count,
+                lessons: lessonCount.rows[0].count,
                 enrollments: enrollmentCount.rows[0].count
-            }
+            },
+            courses: courses.rows
         });
     } catch (err) {
         res.status(500).json({ status: 'error', database: 'disconnected', error: err.message });
