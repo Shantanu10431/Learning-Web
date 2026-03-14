@@ -90,6 +90,16 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
         const { id } = req.params;
         const studentId = req.user.user_id;
 
+        const courseRes = await db.query(`
+      SELECT c.*, u.name as instructor_name 
+      FROM courses c 
+      JOIN users u ON c.instructor_id = u.user_id 
+      WHERE c.course_id = $1
+    `, [id]);
+
+        if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+        const course = courseRes.rows[0];
+
         // Check enrollment AND payment status
         const enrollRes = await db.query(
             'SELECT * FROM enrollments WHERE student_id = $1 AND course_id = $2',
@@ -100,23 +110,10 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'Not enrolled in this course' });
         }
 
-        // Check if payment is completed
-        if (enrollRes.rows[0].payment_status !== 'completed') {
+        // Check if payment is completed (ONLY IF course is paid)
+        if (parseFloat(course.price) > 0 && enrollRes.rows[0].payment_status !== 'completed') {
             return res.status(402).json({ error: 'Payment required to access course content' });
         }
-
-        // ... skipped down ...
-        // NOTE: I am copying the tree endpoint exactly to avoid losing lines, but replacing the POST and PUT endpoints directly.
-
-        const courseRes = await db.query(`
-      SELECT c.*, u.name as instructor_name 
-      FROM courses c 
-      JOIN users u ON c.instructor_id = u.user_id 
-      WHERE c.course_id = $1
-    `, [id]);
-
-        if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
-        const course = courseRes.rows[0];
 
         const sectionsRes = await db.query('SELECT * FROM sections WHERE course_id = $1 ORDER BY order_number', [id]);
         const sectionIds = sectionsRes.rows.map(s => s.section_id);
