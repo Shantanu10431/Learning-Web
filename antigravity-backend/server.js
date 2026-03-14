@@ -254,6 +254,116 @@ app.use('/api', lessonsRoutes);
 app.use('/api', enrollmentRoutes);
 app.use('/api', progressRoutes);
 
+// Auto-seed courses if none exist
+const autoSeedCourses = async () => {
+    try {
+        const axios = require('axios');
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            connectionString: process.env.DB_URL,
+            ssl: { rejectUnauthorized: false }
+        });
+
+        // Check if courses exist
+        const checkRes = await pool.query('SELECT COUNT(*) FROM courses');
+        const courseCount = parseInt(checkRes.rows[0].count);
+
+        if (courseCount > 0) {
+            console.log(`Found ${courseCount} courses in database, skipping seed`);
+            await pool.end();
+            return;
+        }
+
+        console.log('No courses found, seeding from YouTube...');
+        const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
+        // Get or create instructor
+        let adminRes = await pool.query('SELECT user_id FROM users WHERE role = $1 LIMIT 1', ['instructor']);
+        if (adminRes.rows.length === 0) {
+            adminRes = await pool.query(`
+                INSERT INTO users (name, email, password_hash, role) 
+                VALUES ('Platform AI', 'ai@antigravity.io', 'hashed', 'instructor') 
+                RETURNING user_id
+            `);
+        }
+        const instructorId = adminRes.rows[0].user_id;
+
+        // Real YouTube playlist IDs
+        const playlists = [
+            { id: 'PLZPZq0r_RZOMhMvvhyL8c1gM-b-02v-H-', price: 499, category: 'Web Development', title: 'React JS Full Course' },
+            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 399, category: 'Python', title: 'Python for Beginners' },
+            { id: 'PL4cUxeGkcC9gcy9lrvXZ75evwG23M_2Rk', price: 299, category: 'CSS', title: 'Tailwind CSS Course' },
+            { id: 'PL-osiE80TeTs4UjLw5MM6OjgkjFeYwxa0', price: 599, category: 'Backend', title: 'Node.js Express Complete' }
+        ];
+
+        let coursesAdded = 0;
+        for (const playlist of playlists) {
+            try {
+                if (!YOUTUBE_API_KEY) break;
+                const pRes = await axios.get(
+                    `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlist.id}&key=${YOUTUBE_API_KEY}`
+                );
+
+                if (!pRes.data.items || pRes.data.items.length === 0) continue;
+
+                const snippet = pRes.data.items[0].snippet;
+                const title = snippet.title;
+                const description = snippet.description || 'A comprehensive course';
+                const thumbnail = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url;
+
+                const courseRes = await pool.query(`
+                    INSERT INTO courses (title, description, thumbnail_url, category, price, instructor_id, is_published)
+                    VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING course_id
+                `, [title, description, thumbnail, playlist.category, playlist.price, instructorId]);
+
+                const courseId = courseRes.rows[0].course_id;
+
+                const sectionRes = await pool.query(`
+                    INSERT INTO sections (course_id, title, order_number)
+                    VALUES ($1, 'Main Modules', 1) RETURNING section_id
+                `, [courseId]);
+
+                const sectionId = sectionRes.rows[0].section_id;
+
+                let pageToken = '';
+                let videoCount = 0;
+                do {
+                    const vRes = await axios.get(
+                        `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=10&playlistId=${playlist.id}&key=${YOUTUBE_API_KEY}${pageToken ? '&pageToken=' + pageToken : ''}`
+                    );
+
+                    for (const item of vRes.data.items) {
+                        const vTitle = item.snippet.title;
+                        const vId = item.snippet.resourceId.videoId;
+                        if (vTitle.includes('Private') || vTitle.includes('Deleted')) continue;
+                        videoCount++;
+                        await pool.query(`
+                            INSERT INTO lessons (section_id, title, youtube_url, order_number, description)
+                            VALUES ($1, $2, $3, $4, $5)
+                        `, [sectionId, vTitle, `https://www.youtube.com/watch?v=${vId}`, videoCount, 'Enjoy the lesson!']);
+                    }
+                    pageToken = vRes.data.nextPageToken;
+                } while (pageToken && videoCount < 10);
+
+                coursesAdded++;
+                console.log(`Auto-seeded: ${title} with ${videoCount} videos`);
+            } catch (e) {
+                console.log(`Error with playlist ${playlist.id}:`, e.message);
+            }
+        }
+
+        await pool.end();
+        console.log(`Auto-seed complete: ${coursesAdded} courses added`);
+    } catch (err) {
+        console.log('Auto-seed error:', err.message);
+    }
+};
+
+// Run auto-seed on startup (skip in test)
+if (process.env.NODE_ENV !== 'test') {
+    setTimeout(autoSeedCourses, 2000);
+}
+
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
