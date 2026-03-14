@@ -21,7 +21,9 @@ const Login = () => {
                 navigate('/dashboard');
             }
         } catch (err) {
-            setError(err.response?.data?.error || 'Login failed');
+            const serverError = err.response?.data?.error || 'Login failed';
+            const details = err.response?.data?.details;
+            setError(details ? `${serverError}: ${details}` : serverError);
         }
     };
 

@@ -8,24 +8,32 @@ const { authMiddleware } = require('../middleware/auth');
 const router = express.Router();
 
 const generateTokens = async (userId, email, role) => {
-    const accessToken = jwt.sign(
-        { user_id: userId, email, role },
-        process.env.JWT_SECRET3,
-        { expiresIn: '15m' }
-    );
+    try {
+        // Debug: ensure JWT_SECRET3 is available
+        console.log('generateTokens called with userId:', userId, 'JWT_SECRET3 exists:', !!process.env.JWT_SECRET3);
 
-    const refreshTokenString = crypto.randomBytes(40).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(refreshTokenString).digest('hex');
+        const accessToken = jwt.sign(
+            { user_id: userId, email, role },
+            process.env.JWT_SECRET3 || 'fallback_secret',
+            { expiresIn: '15m' }
+        );
 
-    // 30 days
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        const refreshTokenString = crypto.randomBytes(40).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(refreshTokenString).digest('hex');
 
-    await db.query(
-        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
-        [userId, tokenHash, expiresAt]
-    );
+        // 30 days
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    return { accessToken, refreshTokenString };
+        await db.query(
+            'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+            [userId, tokenHash, expiresAt]
+        );
+
+        return { accessToken, refreshTokenString };
+    } catch (err) {
+        console.error('Error in generateTokens:', err);
+        throw err;
+    }
 };
 
 const setRefreshCookie = (res, token) => {
@@ -74,13 +82,30 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) return res.status(400).json({ error: 'Invalid Credentials' });
 
+        // Debug: check if JWT_SECRET3 is available
+        if (!process.env.JWT_SECRET3) {
+            console.error('JWT_SECRET3 is undefined!');
+            return res.status(500).json({ error: 'Server configuration error' });
+        }
+
         const { accessToken, refreshTokenString } = await generateTokens(user.user_id, user.email, user.role);
 
         setRefreshCookie(res, refreshTokenString);
         res.json({ token: accessToken, user: { user_id: user.user_id, name: user.name, email: user.email, role: user.role } });
     } catch (err) {
         console.error('VERCEL LOGIN ERROR:', err);
-        res.status(500).json({ error: 'Server error', details: err.message, stack: err.stack });
+        // Provide more detailed error for debugging
+        const errorMessage = err.message || 'Unknown error';
+        const isBcryptError = errorMessage.includes('bcrypt') || errorMessage.includes('hash');
+        const isJwtError = errorMessage.includes('JWT') || errorMessage.includes('jwt');
+        const isDbError = errorMessage.includes('database') || errorMessage.includes('DB') || errorMessage.includes('relation');
+
+        let userMessage = 'Server error';
+        if (isBcryptError) userMessage = 'Password verification failed';
+        else if (isJwtError) userMessage = 'Authentication token generation failed';
+        else if (isDbError) userMessage = 'Database operation failed';
+
+        res.status(500).json({ error: userMessage, details: errorMessage });
     }
 });
 
