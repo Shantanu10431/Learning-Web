@@ -104,30 +104,35 @@ app.get('/api/seed-youtube', async (req, res) => {
         }
         const instructorId = adminRes.rows[0].user_id;
 
-        // Real YouTube playlist IDs from popular coding channels
+        // Real YouTube playlist IDs and videos from popular coding channels
         const playlists = [
-            { id: 'PLWKjhJtqVAblfum5WiQblKPwIbqYXkDoC', price: 0, category: 'Web Development', title: 'Frontend Web Development Bootcamp' },
-            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 0, category: 'Python', title: 'Python 100 Days - Complete Course' },
-            { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 0, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
-            { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 0, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
-            { id: 'PL4cUxeGkcC9gcy9lrvXZ75evwG23M_2Rk', price: 299, category: 'CSS', title: 'Tailwind CSS Complete Course' },
-            { id: 'PL-osiE80TeTs4UjLw5MM6OjgkjFeYwxa0', price: 499, category: 'Backend', title: 'Node.js Express Complete Guide' }
+            { id: 'PLWKjhJtqVAblfum5WiQblKPwIbqYXkDoC', price: 3499, category: 'Web Development', title: 'Frontend Web Development Bootcamp' },
+            { videoId: 'eWRfhZUzrAc', price: 1499, category: 'Python', title: 'Python for Beginners' },
+            { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 4999, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
+            { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 2499, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
+            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 1999, category: 'Python', title: 'Python 100 Days - Complete Course' }
         ];
 
         let coursesAdded = 0;
         for (const playlist of playlists) {
             try {
-                // Fetch playlist details
-                const pRes = await axios.get(
-                    `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlist.id}&key=${YOUTUBE_API_KEY}`
-                );
+                let title, description, thumbnail;
 
-                if (!pRes.data.items || pRes.data.items.length === 0) continue;
-
-                const snippet = pRes.data.items[0].snippet;
-                const title = snippet.title;
-                const description = snippet.description || 'A comprehensive course';
-                const thumbnail = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url;
+                if (playlist.videoId) {
+                    const vRes = await axios.get(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${playlist.videoId}&key=${YOUTUBE_API_KEY}`);
+                    if (!vRes.data.items || vRes.data.items.length === 0) continue;
+                    const snippet = vRes.data.items[0].snippet;
+                    title = playlist.title || snippet.title;
+                    description = snippet.description || 'A comprehensive course';
+                    thumbnail = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url;
+                } else {
+                    const pRes = await axios.get(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlist.id}&key=${YOUTUBE_API_KEY}`);
+                    if (!pRes.data.items || pRes.data.items.length === 0) continue;
+                    const snippet = pRes.data.items[0].snippet;
+                    title = playlist.title || snippet.title;
+                    description = snippet.description || 'A comprehensive course';
+                    thumbnail = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url;
+                }
 
                 // Insert course
                 const courseRes = await pool.query(`
@@ -144,6 +149,17 @@ app.get('/api/seed-youtube', async (req, res) => {
                 `, [courseId]);
 
                 const sectionId = sectionRes.rows[0].section_id;
+
+                if (playlist.videoId) {
+                    // Single video course
+                    await pool.query(`
+                        INSERT INTO lessons (section_id, title, youtube_url, order_number, description)
+                        VALUES ($1, $2, $3, $4, $5)
+                    `, [sectionId, title, `https://www.youtube.com/watch?v=${playlist.videoId}`, 1, 'Full Course Video']);
+                    coursesAdded++;
+                    console.log(`Added single video course: ${title}`);
+                    continue;
+                }
 
                 // Fetch playlist videos
                 let pageToken = '';
@@ -171,7 +187,7 @@ app.get('/api/seed-youtube', async (req, res) => {
                 coursesAdded++;
                 console.log(`Added: ${title} with ${videoCount} videos`);
             } catch (e) {
-                console.log(`Error with playlist ${playlist.id}:`, e.message);
+                console.log(`Error with course ${playlist.title}:`, e.message);
             }
         }
 
@@ -323,30 +339,37 @@ const autoSeedCourses = async () => {
         }
         const instructorId = adminRes.rows[0].user_id;
 
-        // Real YouTube playlist IDs from popular coding channels
+        // Real YouTube playlist IDs and videos from popular coding channels
         const playlists = [
-            { id: 'PLWKjhJtqVAblfum5WiQblKPwIbqYXkDoC', price: 0, category: 'Web Development', title: 'Frontend Web Development Bootcamp' },
-            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 0, category: 'Python', title: 'Python 100 Days - Complete Course' },
-            { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 0, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
-            { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 0, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
-            { id: 'PL4cUxeGkcC9gcy9lrvXZ75evwG23M_2Rk', price: 299, category: 'CSS', title: 'Tailwind CSS Complete Course' },
-            { id: 'PL-osiE80TeTs4UjLw5MM6OjgkjFeYwxa0', price: 499, category: 'Backend', title: 'Node.js Express Complete Guide' }
+            { id: 'PLWKjhJtqVAblfum5WiQblKPwIbqYXkDoC', price: 3499, category: 'Web Development', title: 'Frontend Web Development Bootcamp' },
+            { videoId: 'eWRfhZUzrAc', price: 1499, category: 'Python', title: 'Python for Beginners' },
+            { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 4999, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
+            { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 2499, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
+            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 1999, category: 'Python', title: 'Python 100 Days - Complete Course' }
         ];
 
         let coursesAdded = 0;
         for (const playlist of playlists) {
             try {
                 if (!YOUTUBE_API_KEY) break;
-                const pRes = await axios.get(
-                    `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlist.id}&key=${YOUTUBE_API_KEY}`
-                );
 
-                if (!pRes.data.items || pRes.data.items.length === 0) continue;
+                let title, description, thumbnail;
 
-                const snippet = pRes.data.items[0].snippet;
-                const title = snippet.title;
-                const description = snippet.description || 'A comprehensive course';
-                const thumbnail = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url;
+                if (playlist.videoId) {
+                    const vRes = await axios.get(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${playlist.videoId}&key=${YOUTUBE_API_KEY}`);
+                    if (!vRes.data.items || vRes.data.items.length === 0) continue;
+                    const snippet = vRes.data.items[0].snippet;
+                    title = playlist.title || snippet.title;
+                    description = snippet.description || 'A comprehensive course';
+                    thumbnail = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url;
+                } else {
+                    const pRes = await axios.get(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlist.id}&key=${YOUTUBE_API_KEY}`);
+                    if (!pRes.data.items || pRes.data.items.length === 0) continue;
+                    const snippet = pRes.data.items[0].snippet;
+                    title = playlist.title || snippet.title;
+                    description = snippet.description || 'A comprehensive course';
+                    thumbnail = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url;
+                }
 
                 const courseRes = await pool.query(`
                     INSERT INTO courses (title, description, thumbnail_url, category, price, instructor_id, is_published)
@@ -361,6 +384,16 @@ const autoSeedCourses = async () => {
                 `, [courseId]);
 
                 const sectionId = sectionRes.rows[0].section_id;
+
+                if (playlist.videoId) {
+                    await pool.query(`
+                        INSERT INTO lessons (section_id, title, youtube_url, order_number, description)
+                        VALUES ($1, $2, $3, $4, $5)
+                    `, [sectionId, title, `https://www.youtube.com/watch?v=${playlist.videoId}`, 1, 'Full Course Video']);
+                    coursesAdded++;
+                    console.log(`Auto-seeded single video: ${title}`);
+                    continue;
+                }
 
                 let pageToken = '';
                 let videoCount = 0;
@@ -385,7 +418,7 @@ const autoSeedCourses = async () => {
                 coursesAdded++;
                 console.log(`Auto-seeded: ${title} with ${videoCount} videos`);
             } catch (e) {
-                console.log(`Error with playlist ${playlist.id}:`, e.message);
+                console.log(`Error with course ${playlist.title}:`, e.message);
             }
         }
 
