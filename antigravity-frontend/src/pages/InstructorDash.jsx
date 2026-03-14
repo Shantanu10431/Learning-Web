@@ -38,7 +38,7 @@ const InstructorDash = () => {
     const fetchStudents = async () => {
         setStudentsLoading(true);
         try {
-            const res = await api.get('/api/admin/students');
+            const res = await api.get('/admin/students');
             setStudents(res.data);
         } catch (err) {
             console.error(err);
@@ -49,7 +49,7 @@ const InstructorDash = () => {
     const fetchAllUsers = async () => {
         setUsersLoading(true);
         try {
-            const res = await api.get('/api/admin/users');
+            const res = await api.get('/admin/users');
             setAllUsers(res.data);
         } catch (err) {
             console.error(err);
@@ -59,7 +59,7 @@ const InstructorDash = () => {
 
     const fetchStudentDetails = async (studentId) => {
         try {
-            const res = await api.get(`/api/admin/students/${studentId}`);
+            const res = await api.get(`/admin/students/${studentId}`);
             setStudentDetails(res.data);
         } catch (err) {
             console.error(err);
@@ -174,8 +174,8 @@ const InstructorDash = () => {
                 <button
                     onClick={() => setActiveTab('courses')}
                     className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors relative whitespace-nowrap ${activeTab === 'courses'
-                            ? 'text-indigo-400'
-                            : 'text-slate-400 hover:text-white'
+                        ? 'text-indigo-400'
+                        : 'text-slate-400 hover:text-white'
                         }`}
                 >
                     <BookOpen size={18} />
@@ -187,8 +187,8 @@ const InstructorDash = () => {
                 <button
                     onClick={() => setActiveTab('students')}
                     className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors relative whitespace-nowrap ${activeTab === 'students'
-                            ? 'text-indigo-400'
-                            : 'text-slate-400 hover:text-white'
+                        ? 'text-indigo-400'
+                        : 'text-slate-400 hover:text-white'
                         }`}
                 >
                     <UserCheck size={18} />
@@ -200,8 +200,8 @@ const InstructorDash = () => {
                 <button
                     onClick={() => setActiveTab('users')}
                     className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors relative whitespace-nowrap ${activeTab === 'users'
-                            ? 'text-indigo-400'
-                            : 'text-slate-400 hover:text-white'
+                        ? 'text-indigo-400'
+                        : 'text-slate-400 hover:text-white'
                         }`}
                 >
                     <Users size={18} />
@@ -504,10 +504,10 @@ const InstructorDash = () => {
                                             <td className="px-4 py-3 text-slate-400">{u.email}</td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2 py-1 rounded text-xs font-medium ${u.role === 'instructor'
-                                                        ? 'bg-orange-600/20 text-orange-400'
-                                                        : u.role === 'admin'
-                                                            ? 'bg-red-600/20 text-red-400'
-                                                            : 'bg-indigo-600/20 text-indigo-400'
+                                                    ? 'bg-orange-600/20 text-orange-400'
+                                                    : u.role === 'admin'
+                                                        ? 'bg-red-600/20 text-red-400'
+                                                        : 'bg-indigo-600/20 text-indigo-400'
                                                     }`}>
                                                     {u.role?.toUpperCase()}
                                                 </span>
