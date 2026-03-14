@@ -20,6 +20,32 @@ router.get('/courses', async (req, res) => {
     }
 });
 
+router.get('/courses/search', async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q) return res.json([]);
+
+        // Ensure price is fetched here too since the frontend may display it
+        const result = await db.query(`
+      SELECT c.*, u.name as instructor_name 
+      FROM courses c 
+      JOIN users u ON c.instructor_id = u.user_id 
+      WHERE is_published = true 
+      AND (
+          c.title ILIKE $1 
+          OR c.description ILIKE $1 
+          OR c.category ILIKE $1 
+          OR u.name ILIKE $1
+      )
+      ORDER BY c.created_at DESC
+    `, [`%${q}%`]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 router.get('/courses/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -79,6 +105,9 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
             return res.status(402).json({ error: 'Payment required to access course content' });
         }
 
+        // ... skipped down ...
+        // NOTE: I am copying the tree endpoint exactly to avoid losing lines, but replacing the POST and PUT endpoints directly.
+
         const courseRes = await db.query(`
       SELECT c.*, u.name as instructor_name 
       FROM courses c 
@@ -134,13 +163,13 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
 
 router.post('/courses', authMiddleware, roleMiddleware(['instructor', 'admin']), async (req, res) => {
     try {
-        const { title, description, thumbnail_url, category, is_published } = req.body;
+        const { title, description, thumbnail_url, category, is_published, price } = req.body;
         const instructor_id = req.user.user_id;
 
         const newCourse = await db.query(`
-      INSERT INTO courses (title, description, thumbnail_url, category, instructor_id, is_published)
-      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
-    `, [title, description, thumbnail_url, category, instructor_id, is_published || false]);
+      INSERT INTO courses (title, description, thumbnail_url, category, instructor_id, is_published, price)
+      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
+    `, [title, description, thumbnail_url, category, instructor_id, is_published || false, price || 0]);
 
         res.json(newCourse.rows[0]);
     } catch (err) {
@@ -152,7 +181,7 @@ router.post('/courses', authMiddleware, roleMiddleware(['instructor', 'admin']),
 router.put('/courses/:id', authMiddleware, roleMiddleware(['instructor', 'admin']), async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, thumbnail_url, category, is_published } = req.body;
+        const { title, description, thumbnail_url, category, is_published, price } = req.body;
 
         const courseRes = await db.query('SELECT instructor_id FROM courses WHERE course_id = $1', [id]);
         if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
@@ -162,9 +191,9 @@ router.put('/courses/:id', authMiddleware, roleMiddleware(['instructor', 'admin'
 
         const updateRes = await db.query(`
       UPDATE courses 
-      SET title = $1, description = $2, thumbnail_url = $3, category = $4, is_published = COALESCE($5, is_published)
-      WHERE course_id = $6 RETURNING *
-    `, [title, description, thumbnail_url, category, is_published, id]);
+      SET title = $1, description = $2, thumbnail_url = $3, category = $4, is_published = COALESCE($5, is_published), price = COALESCE($6, price)
+      WHERE course_id = $7 RETURNING *
+    `, [title, description, thumbnail_url, category, is_published, price, id]);
 
         res.json(updateRes.rows[0]);
     } catch (err) {

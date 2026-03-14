@@ -10,6 +10,7 @@ const LearnPage = () => {
     const [course, setCourse] = useState(null);
     const [currentLesson, setCurrentLesson] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const [completedLessons, setCompletedLessons] = useState([]);
@@ -58,6 +59,13 @@ const LearnPage = () => {
                 }
             } catch (err) {
                 console.error(err);
+                if (err.response?.status === 402) {
+                    setError('Payment required to access this course. Please complete enrollment.');
+                } else if (err.response?.status === 403) {
+                    setError('You are not enrolled in this course.');
+                } else {
+                    setError('Failed to load course. It may be unavailable.');
+                }
             }
             setLoading(false);
             fetchProgress();
@@ -94,6 +102,15 @@ const LearnPage = () => {
     };
 
     if (loading) return <div className="p-8 text-slate-400">Loading learning environment...</div>;
+    if (error) return (
+        <div className="p-12 text-center max-w-2xl mx-auto mt-20 bg-slate-800 rounded-xl border border-slate-700">
+            <h2 className="text-2xl font-bold text-white mb-4">Access Restricted</h2>
+            <p className="text-red-400 mb-8">{error}</p>
+            <Link to={`/courses/${courseId}`} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+                Return to Course Overview
+            </Link>
+        </div>
+    );
     if (!course || !currentLesson) return <div className="p-8 text-red-400">Course or lesson data unavailable.</div>;
 
     const prevLessonId = currentLesson.previous_lesson_id;
