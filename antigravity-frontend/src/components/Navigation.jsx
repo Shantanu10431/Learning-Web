@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { LogOut, BookOpen, User } from 'lucide-react';
+import { BookOpen, User } from 'lucide-react';
 import ProfileHoverCard from './ProfileHoverCard';
 
 const Navigation = () => {
@@ -34,12 +34,16 @@ const Navigation = () => {
                                 Dashboard
                             </Link>
 
-                            {/* Hover Profile Card */}
-                            <ProfileHoverCard user={user} onLogout={handleLogout} />
-
-                            <button onClick={handleLogout} className="text-red-400 hover:text-red-300 flex items-center gap-2 transition-colors" title="Logout">
-                                <LogOut size={18} />
-                            </button>
+                            {/* Hover Profile Card - clickable to profile */}
+                            <div className="relative">
+                                <Link
+                                    to="/profile"
+                                    className="text-indigo-400 hover:text-indigo-300 flex items-center gap-2 font-medium transition-colors cursor-pointer"
+                                >
+                                    <User size={18} /> {user.name}
+                                </Link>
+                                <ProfileHoverCard user={user} onLogout={handleLogout} />
+                            </div>
                         </div>
                     ) : (
                         <div className="flex items-center gap-4">

@@ -10,17 +10,11 @@ const ProfileHoverCard = ({ user, onLogout }) => {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            {/* Profile Icon Trigger */}
-            <div className="flex items-center gap-2 cursor-pointer text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
-                <UserIcon size={18} />
-                <span>{user?.name}</span>
-            </div>
-
-            {/* Hover Card */}
+            {/* Hover Card - appears on hover */}
             <div
                 className={`absolute right-0 top-full mt-2 w-72 bg-slate-800 rounded-xl border border-slate-700 shadow-2xl overflow-hidden transform transition-all duration-300 origin-top-right ${isHovered
-                        ? 'opacity-100 scale-100 translate-y-0'
-                        : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
+                        ? 'opacity-100 scale-100 translate-y-0 visible'
+                        : 'opacity-0 scale-95 -translate-y-2 invisible'
                     }`}
                 style={{ zIndex: 9999 }}
             >
@@ -28,7 +22,7 @@ const ProfileHoverCard = ({ user, onLogout }) => {
                 <div className="p-4 bg-gradient-to-r from-indigo-900/50 to-slate-800 border-b border-slate-700">
                     <div className="flex items-center gap-4">
                         {/* Profile Image */}
-                        <div className="w-14 h-14 rounded-full bg-slate-700 border-2 border-white flex items-center justify-center overflow-hidden">
+                        <div className="w-14 h-14 rounded-full bg-slate-700 border-2 border-white flex items-center justify-center overflow-hidden flex-shrink-0">
                             {user?.profile_image_url ? (
                                 <img
                                     src={user.profile_image_url}
