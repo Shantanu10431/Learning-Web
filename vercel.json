@@ -9,14 +9,14 @@
             }
         },
         {
-            "src": "antigravity-backend/server.js",
+            "src": "antigravity-backend/api/index.js",
             "use": "@vercel/node"
         }
     ],
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "/antigravity-backend/server.js"
+            "destination": "/antigravity-backend/api/index.js"
         },
         {
             "source": "/assets/(.*)",
