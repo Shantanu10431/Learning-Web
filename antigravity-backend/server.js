@@ -213,6 +213,91 @@ app.get('/api/seed-youtube', async (req, res) => {
     }
 });
 
+// Seed sample courses without YouTube API (fallback)
+app.get('/api/seed-sample', async (req, res) => {
+    try {
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            connectionString: process.env.DB_URL,
+            ssl: { rejectUnauthorized: false }
+        });
+
+        // Get or create instructor
+        let adminRes = await pool.query('SELECT user_id FROM users WHERE role = $1 LIMIT 1', ['instructor']);
+        if (adminRes.rows.length === 0) {
+            adminRes = await pool.query(`
+                INSERT INTO users (name, email, password_hash, role) 
+                VALUES ('Platform AI', 'ai@antigravity.io', 'hashed', 'instructor') 
+                RETURNING user_id
+            `);
+        }
+        const instructorId = adminRes.rows[0].user_id;
+
+        // Sample courses with real thumbnails
+        const sampleCourses = [
+            { title: 'Complete Python Programming', description: 'Learn Python from scratch to advanced concepts. Perfect for beginners.', category: 'Python', price: 0, thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800' },
+            { title: 'JavaScript Mastery', description: 'Master JavaScript from basics to advanced concepts including ES6+ features.', category: 'JavaScript', price: 0, thumbnail: 'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=800' },
+            { title: 'React JS Complete Guide', description: 'Build modern web apps with React. Includes hooks, context, and more.', category: 'Web Development', price: 299, thumbnail: 'https://images.unsplash.com/photo-1633356122544-45a1465c2479?w=800' },
+            { title: 'Node.js Backend Development', description: 'Learn backend development with Node.js, Express, and MongoDB.', category: 'Backend', price: 499, thumbnail: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800' },
+            { title: 'CSS & Tailwind CSS', description: 'Master CSS and Tailwind for beautiful responsive websites.', category: 'CSS', price: 0, thumbnail: 'https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?w=800' },
+            { title: 'Full Stack Web Development', description: 'Complete full stack development with MERN stack.', category: 'Full Stack', price: 999, thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800' }
+        ];
+
+        const youtubeUrls = [
+            'https://www.youtube.com/watch?v=eWRfhZUzrAc',
+            'https://www.youtube.com/watch?v=W6NZfCO5SIk',
+            'https://www.youtube.com/watch?v=Tn6-PIqc4UM',
+            'https://www.youtube.com/watch?v=Oe421EPjeBE',
+            'https://www.youtube.com/watch?v=ft30xcMlZNk',
+            'https://www.youtube.com/watch?v=nu_pCVPKzTk'
+        ];
+
+        let coursesAdded = 0;
+        for (let i = 0; i < sampleCourses.length; i++) {
+            const course = sampleCourses[i];
+
+            const courseRes = await pool.query(`
+                INSERT INTO courses (title, description, thumbnail_url, category, price, instructor_id, is_published)
+                VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING course_id
+            `, [course.title, course.description, course.thumbnail, course.category, course.price, instructorId]);
+
+            const courseId = courseRes.rows[0].course_id;
+
+            // Create section
+            const sectionRes = await pool.query(`
+                INSERT INTO sections (course_id, title, order_number)
+                VALUES ($1, 'Main Modules', 1) RETURNING section_id
+            `, [courseId]);
+
+            const sectionId = sectionRes.rows[0].section_id;
+
+            // Add lessons
+            const lessons = [
+                'Introduction and Setup',
+                'Core Concepts',
+                'Building Your First Project',
+                'Advanced Topics',
+                'Best Practices',
+                'Final Project'
+            ];
+
+            for (let j = 0; j < lessons.length; j++) {
+                await pool.query(`
+                    INSERT INTO lessons (section_id, title, youtube_url, order_number, description)
+                    VALUES ($1, $2, $3, $4, $5)
+                `, [sectionId, lessons[j], youtubeUrls[i], j + 1, 'Complete this lesson to progress']);
+            }
+
+            coursesAdded++;
+        }
+
+        await pool.end();
+        res.json({ success: true, message: `Added ${coursesAdded} sample courses!` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Search courses endpoint
 app.get('/api/courses/search', async (req, res) => {
     try {
