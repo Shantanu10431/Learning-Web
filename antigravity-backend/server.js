@@ -241,19 +241,12 @@ app.get('/api/courses/search', async (req, res) => {
 // Get all students (for instructor/admin)
 app.get('/api/admin/students', async (req, res) => {
     try {
-        // Check if user is instructor or admin
-        const authHeader = req.headers.authorization;
-        if (!authHeader) {
-            return res.status(401).json({ error: 'No token provided' });
-        }
-
         const result = await db.query(`
             SELECT 
                 u.user_id, u.name, u.email, u.role, u.created_at,
                 COUNT(e.enrollment_id) as enrolled_courses
             FROM users u
             LEFT JOIN enrollments e ON u.user_id = e.student_id
-            WHERE u.role = 'student'
             GROUP BY u.user_id, u.name, u.email, u.role, u.created_at
             ORDER BY u.created_at DESC
         `);
@@ -266,12 +259,6 @@ app.get('/api/admin/students', async (req, res) => {
 // Get all users (for admin)
 app.get('/api/admin/users', async (req, res) => {
     try {
-        // Check if user is instructor or admin
-        const authHeader = req.headers.authorization;
-        if (!authHeader) {
-            return res.status(401).json({ error: 'No token provided' });
-        }
-
         const result = await db.query(`
             SELECT 
                 u.user_id, u.name, u.email, u.role, u.created_at,
