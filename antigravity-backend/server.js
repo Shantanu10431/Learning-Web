@@ -451,7 +451,7 @@ app.use('/api', lessonsRoutes);
 app.use('/api', enrollmentRoutes);
 app.use('/api', progressRoutes);
 
-// Auto-seed courses if none exist
+// Auto-seed courses on startup (always runs)
 const autoSeedCourses = async () => {
     try {
         const axios = require('axios');
@@ -461,18 +461,12 @@ const autoSeedCourses = async () => {
             ssl: { rejectUnauthorized: false }
         });
 
-        // Check if courses exist
-        const checkRes = await pool.query('SELECT COUNT(*) FROM courses');
-        const courseCount = parseInt(checkRes.rows[0].count);
-
-        if (courseCount > 0) {
-            console.log(`Found ${courseCount} courses in database, skipping seed`);
-            await pool.end();
-            return;
-        }
-
-        console.log('No courses found, seeding from YouTube...');
+        console.log('Starting auto-seed from YouTube...');
         const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
+        if (!YOUTUBE_API_KEY) {
+            console.log('No YouTube API key found, using sample data');
+        }
 
         // Get or create instructor
         let adminRes = await pool.query('SELECT user_id FROM users WHERE role = $1 LIMIT 1', ['instructor']);
@@ -487,11 +481,11 @@ const autoSeedCourses = async () => {
 
         // Real YouTube playlist IDs and videos from popular coding channels
         const playlists = [
-            { id: 'PLWKjhJtqVAblfum5WiQblKPwIbqYXkDoC', price: 3499, category: 'Web Development', title: 'Frontend Web Development Bootcamp' },
-            { videoId: 'eWRfhZUzrAc', price: 1499, category: 'Python', title: 'Python for Beginners' },
-            { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 4999, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
-            { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 2499, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
-            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 1999, category: 'Python', title: 'Python 100 Days - Complete Course' }
+            { id: 'PLWKjhJtqVAblfum5WiQblKPwIbqYXkDoC', price: 0, category: 'Web Development', title: 'Frontend Web Development Bootcamp' },
+            { videoId: 'eWRfhZUzrAc', price: 0, category: 'Python', title: 'Python for Beginners' },
+            { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 0, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
+            { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 0, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
+            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 0, category: 'Python', title: 'Python 100 Days - Complete Course' }
         ];
 
         let coursesAdded = 0;
@@ -575,10 +569,8 @@ const autoSeedCourses = async () => {
     }
 };
 
-// Run auto-seed on startup (skip in test)
-if (process.env.NODE_ENV !== 'test') {
-    setTimeout(autoSeedCourses, 2000);
-}
+// Run auto-seed on startup
+setTimeout(autoSeedCourses, 3000);
 
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'production') {
