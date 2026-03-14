@@ -41,7 +41,22 @@ const db = require('./db/pool');
 app.get('/api/health', async (req, res) => {
     try {
         const result = await db.query('SELECT NOW()');
-        res.json({ status: 'ok', database: 'connected', time: result.rows[0].now });
+
+        // Get counts
+        const userCount = await db.query('SELECT COUNT(*) FROM users');
+        const courseCount = await db.query('SELECT COUNT(*) FROM courses');
+        const enrollmentCount = await db.query('SELECT COUNT(*) FROM enrollments');
+
+        res.json({
+            status: 'ok',
+            database: 'connected',
+            time: result.rows[0].now,
+            counts: {
+                users: userCount.rows[0].count,
+                courses: courseCount.rows[0].count,
+                enrollments: enrollmentCount.rows[0].count
+            }
+        });
     } catch (err) {
         res.status(500).json({ status: 'error', database: 'disconnected', error: err.message });
     }
@@ -226,6 +241,12 @@ app.get('/api/courses/search', async (req, res) => {
 // Get all students (for instructor/admin)
 app.get('/api/admin/students', async (req, res) => {
     try {
+        // Check if user is instructor or admin
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ error: 'No token provided' });
+        }
+
         const result = await db.query(`
             SELECT 
                 u.user_id, u.name, u.email, u.role, u.created_at,
@@ -233,6 +254,32 @@ app.get('/api/admin/students', async (req, res) => {
             FROM users u
             LEFT JOIN enrollments e ON u.user_id = e.student_id
             WHERE u.role = 'student'
+            GROUP BY u.user_id, u.name, u.email, u.role, u.created_at
+            ORDER BY u.created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get all users (for admin)
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        // Check if user is instructor or admin
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ error: 'No token provided' });
+        }
+
+        const result = await db.query(`
+            SELECT 
+                u.user_id, u.name, u.email, u.role, u.created_at,
+                COUNT(DISTINCT e.enrollment_id) as enrolled_courses,
+                COUNT(DISTINCT c.course_id) as created_courses
+            FROM users u
+            LEFT JOIN enrollments e ON u.user_id = e.student_id
+            LEFT JOIN courses c ON u.user_id = c.instructor_id
             GROUP BY u.user_id, u.name, u.email, u.role, u.created_at
             ORDER BY u.created_at DESC
         `);
@@ -273,26 +320,6 @@ app.get('/api/admin/students/:id', async (req, res) => {
             ...userRes.rows[0],
             courses: coursesRes.rows
         });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Get all users (for admin)
-app.get('/api/admin/users', async (req, res) => {
-    try {
-        const result = await db.query(`
-            SELECT 
-                u.user_id, u.name, u.email, u.role, u.created_at,
-                COUNT(DISTINCT e.enrollment_id) as enrolled_courses,
-                COUNT(DISTINCT c.course_id) as created_courses
-            FROM users u
-            LEFT JOIN enrollments e ON u.user_id = e.student_id
-            LEFT JOIN courses c ON u.user_id = c.instructor_id
-            GROUP BY u.user_id, u.name, u.email, u.role, u.created_at
-            ORDER BY u.created_at DESC
-        `);
-        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
