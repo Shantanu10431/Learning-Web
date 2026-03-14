@@ -64,6 +64,21 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
         const { id } = req.params;
         const studentId = req.user.user_id;
 
+        // Check enrollment AND payment status
+        const enrollRes = await db.query(
+            'SELECT * FROM enrollments WHERE student_id = $1 AND course_id = $2',
+            [studentId, id]
+        );
+
+        if (enrollRes.rows.length === 0) {
+            return res.status(403).json({ error: 'Not enrolled in this course' });
+        }
+
+        // Check if payment is completed
+        if (enrollRes.rows[0].payment_status !== 'completed') {
+            return res.status(402).json({ error: 'Payment required to access course content' });
+        }
+
         const courseRes = await db.query(`
       SELECT c.*, u.name as instructor_name 
       FROM courses c 

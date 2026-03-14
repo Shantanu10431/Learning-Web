@@ -48,6 +48,9 @@ CREATE TABLE IF NOT EXISTS enrollments (
   student_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
   course_id UUID REFERENCES courses(course_id) ON DELETE CASCADE,
   enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  payment_status VARCHAR(20) DEFAULT 'pending',
+  payment_id TEXT,
+  amount_paid DECIMAL(10, 2),
   UNIQUE(student_id, course_id)
 );
 

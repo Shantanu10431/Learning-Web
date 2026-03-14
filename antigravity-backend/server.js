@@ -119,6 +119,29 @@ app.get('/api/test-youtube', async (req, res) => {
     }
 });
 
+// Clear and reseed courses - removes duplicates
+app.get('/api/reset-courses', async (req, res) => {
+    try {
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            connectionString: process.env.DB_URL,
+            ssl: { rejectUnauthorized: false }
+        });
+
+        // Delete all related data first
+        await pool.query('DELETE FROM progress');
+        await pool.query('DELETE FROM lessons');
+        await pool.query('DELETE FROM sections');
+        await pool.query('DELETE FROM enrollments');
+        await pool.query('DELETE FROM courses');
+
+        await pool.end();
+        res.json({ success: true, message: 'All courses cleared. Use /api/seed-youtube to reseed.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Seed courses from YouTube API - REAL PLAYLISTS
 // Use ?force=true to re-seed even if courses exist
 app.get('/api/seed-youtube', async (req, res) => {
@@ -172,7 +195,7 @@ app.get('/api/seed-youtube', async (req, res) => {
             { videoId: 'eWRfhZUzrAc', price: 1499, category: 'Python', title: 'Python for Beginners' },
             { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 4999, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
             { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 2499, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
-            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 1999, category: 'Python', title: 'Python 100 Days - Complete Course' }
+            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 2999, category: 'Python', title: 'Python 100 Days - Complete Course' }
         ];
 
         let coursesAdded = 0;
@@ -282,12 +305,12 @@ app.get('/api/seed-sample', async (req, res) => {
 
         // Sample courses with real thumbnails
         const sampleCourses = [
-            { title: 'Complete Python Programming', description: 'Learn Python from scratch to advanced concepts. Perfect for beginners.', category: 'Python', price: 0, thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800' },
-            { title: 'JavaScript Mastery', description: 'Master JavaScript from basics to advanced concepts including ES6+ features.', category: 'JavaScript', price: 0, thumbnail: 'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=800' },
-            { title: 'React JS Complete Guide', description: 'Build modern web apps with React. Includes hooks, context, and more.', category: 'Web Development', price: 299, thumbnail: 'https://images.unsplash.com/photo-1633356122544-45a1465c2479?w=800' },
-            { title: 'Node.js Backend Development', description: 'Learn backend development with Node.js, Express, and MongoDB.', category: 'Backend', price: 499, thumbnail: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800' },
-            { title: 'CSS & Tailwind CSS', description: 'Master CSS and Tailwind for beautiful responsive websites.', category: 'CSS', price: 0, thumbnail: 'https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?w=800' },
-            { title: 'Full Stack Web Development', description: 'Complete full stack development with MERN stack.', category: 'Full Stack', price: 999, thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800' }
+            { title: 'Complete Python Programming', description: 'Learn Python from scratch to advanced concepts. Perfect for beginners.', category: 'Python', price: 1999, thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800' },
+            { title: 'JavaScript Mastery', description: 'Master JavaScript from basics to advanced concepts including ES6+ features.', category: 'JavaScript', price: 1499, thumbnail: 'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=800' },
+            { title: 'React JS Complete Guide', description: 'Build modern web apps with React. Includes hooks, context, and more.', category: 'Web Development', price: 2999, thumbnail: 'https://images.unsplash.com/photo-1633356122544-45a1465c2479?w=800' },
+            { title: 'Node.js Backend Development', description: 'Learn backend development with Node.js, Express, and MongoDB.', category: 'Backend', price: 2499, thumbnail: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800' },
+            { title: 'CSS & Tailwind CSS', description: 'Master CSS and Tailwind for beautiful responsive websites.', category: 'CSS', price: 999, thumbnail: 'https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?w=800' },
+            { title: 'Full Stack Web Development', description: 'Complete full stack development with MERN stack.', category: 'Full Stack', price: 4999, thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800' }
         ];
 
         const youtubeUrls = [
@@ -481,11 +504,11 @@ const autoSeedCourses = async () => {
 
         // Real YouTube playlist IDs and videos from popular coding channels
         const playlists = [
-            { id: 'PLWKjhJtqVAblfum5WiQblKPwIbqYXkDoC', price: 0, category: 'Web Development', title: 'Frontend Web Development Bootcamp' },
-            { videoId: 'eWRfhZUzrAc', price: 0, category: 'Python', title: 'Python for Beginners' },
-            { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 0, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
-            { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 0, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
-            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 0, category: 'Python', title: 'Python 100 Days - Complete Course' }
+            { id: 'PLWKjhJtqVAblfum5WiQblKPwIbqYXkDoC', price: 1999, category: 'Web Development', title: 'Frontend Web Development Bootcamp' },
+            { videoId: 'eWRfhZUzrAc', price: 999, category: 'Python', title: 'Python for Beginners' },
+            { id: 'PLhQjrBD2T382hIW-IsOVuXP1uMzEvmcE5', price: 2999, category: 'Full Stack', title: 'CS50 Web Programming with Python' },
+            { id: 'PLZPZq0r_RZON03iKBjYOsOKr1-TD7z2lH', price: 1499, category: 'JavaScript', title: 'JavaScript Full Course - Beginner to Pro' },
+            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 2499, category: 'Python', title: 'Python 100 Days - Complete Course' }
         ];
 
         let coursesAdded = 0;
@@ -569,8 +592,81 @@ const autoSeedCourses = async () => {
     }
 };
 
-// Run auto-seed on startup
-setTimeout(autoSeedCourses, 3000);
+// Run auto-seed on startup - with duplicate prevention
+setTimeout(async () => {
+    try {
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            connectionString: process.env.DB_URL,
+            ssl: { rejectUnauthorized: false }
+        });
+
+        // Check if courses exist
+        const checkRes = await pool.query('SELECT COUNT(*) FROM courses');
+        const count = parseInt(checkRes.rows[0].count);
+
+        if (count > 10) {
+            // Too many courses - likely duplicates, clear and reseed
+            console.log('Too many courses detected, clearing duplicates...');
+            await pool.query('DELETE FROM progress');
+            await pool.query('DELETE FROM lessons');
+            await pool.query('DELETE FROM sections');
+            await pool.query('DELETE FROM enrollments');
+            await pool.query('DELETE FROM courses');
+            console.log('Duplicates cleared');
+        }
+
+        await pool.end();
+    } catch (err) {
+        console.log('Auto-seed check error:', err.message);
+    }
+
+    // Then run the actual seeding
+    autoSeedCourses();
+}, 3000);
+
+// Run payment status migration
+const runPaymentMigration = async () => {
+    try {
+        const { Pool } = require('pg');
+        const pool = new Pool({
+            connectionString: process.env.DB_URL,
+            ssl: { rejectUnauthorized: false }
+        });
+
+        // Check if payment_status column exists
+        const checkResult = await pool.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'enrollments' AND column_name = 'payment_status'
+        `);
+
+        if (checkResult.rows.length === 0) {
+            console.log('Adding payment columns to enrollments...');
+            await pool.query(`
+                ALTER TABLE enrollments 
+                ADD COLUMN payment_status VARCHAR(20) DEFAULT 'pending',
+                ADD COLUMN payment_id TEXT,
+                ADD COLUMN amount_paid DECIMAL(10, 2)
+            `);
+            console.log('✅ Payment columns added');
+        }
+
+        // Update existing enrollments to completed
+        const updateResult = await pool.query(`
+            UPDATE enrollments 
+            SET payment_status = 'completed' 
+            WHERE payment_status IS NULL OR payment_status = 'pending'
+        `);
+        console.log(`✅ Updated ${updateResult.rowCount} enrollments to completed`);
+
+        await pool.end();
+    } catch (err) {
+        console.log('Payment migration error:', err.message);
+    }
+};
+
+setTimeout(runPaymentMigration, 5000);
 
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'production') {

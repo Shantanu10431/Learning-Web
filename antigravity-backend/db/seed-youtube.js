@@ -119,7 +119,7 @@ async function seedManualCourses() {
                 title: 'Complete Java Programming Bootcamp',
                 description: 'Learn Java from scratch to advanced concepts. Perfect for beginners and those switching from other languages.',
                 category: 'Programming',
-                price: 0,
+                price: 499,
                 lessons: [
                     { title: 'Introduction to Java', youtube_url: 'https://www.youtube.com/watch?v=TBWX97e1E9g' },
                     { title: 'Setting Up Java Environment', youtube_url: 'https://www.youtube.com/watch?v=z2d3RzXw3os' },
@@ -134,7 +134,7 @@ async function seedManualCourses() {
                 title: 'Data Structures & Algorithms Masterclass',
                 description: 'Master DSA concepts with practical implementations. Essential for coding interviews.',
                 category: 'Programming',
-                price: 49.99,
+                price: 799,
                 lessons: [
                     { title: 'Introduction to DSA', youtube_url: 'https://www.youtube.com/watch?v=CBYPPZ7S6mQ' },
                     { title: 'Arrays and Strings', youtube_url: 'https://www.youtube.com/watch?v=8Xy7Y3Qx5YHw' },
@@ -149,7 +149,7 @@ async function seedManualCourses() {
                 title: 'Flutter Mobile App Development',
                 description: 'Build beautiful cross-platform mobile apps with Flutter and Dart.',
                 category: 'Mobile Development',
-                price: 79.99,
+                price: 899,
                 lessons: [
                     { title: 'Flutter Introduction', youtube_url: 'https://www.youtube.com/watch?v=1ukpY3G4YQw' },
                     { title: 'Dart Basics', youtube_url: 'https://www.youtube.com/watch?v=2X3Y4Z5Q9Hw' },
@@ -164,7 +164,7 @@ async function seedManualCourses() {
                 title: 'AWS Cloud Practitioner Certification',
                 description: 'Prepare for AWS certification. Learn cloud fundamentals and AWS services.',
                 category: 'DevOps',
-                price: 59.99,
+                price: 699,
                 lessons: [
                     { title: 'Cloud Computing Basics', youtube_url: 'https://www.youtube.com/watch?v=S3qcB9X4YQw' },
                     { title: 'AWS Global Infrastructure', youtube_url: 'https://www.youtube.com/watch?v=1X2Y3Z4Q9Hw' },
@@ -179,7 +179,7 @@ async function seedManualCourses() {
                 title: 'UI/UX Design with Figma',
                 description: 'Learn modern UI/UX design principles and master Figma for creating stunning interfaces.',
                 category: 'Design',
-                price: 0,
+                price: 599,
                 lessons: [
                     { title: 'UI/UX Fundamentals', youtube_url: 'https://www.youtube.com/watch?v=7Y8Z9X3Q9Hw' },
                     { title: 'Figma Interface Overview', youtube_url: 'https://www.youtube.com/watch?v=8Y9Z3X4Q8Hw' },
@@ -194,7 +194,7 @@ async function seedManualCourses() {
                 title: 'Go Programming Language Complete',
                 description: 'Learn Go from basics to building concurrent applications.',
                 category: 'Backend',
-                price: 39.99,
+                price: 549,
                 lessons: [
                     { title: 'Go Introduction', youtube_url: 'https://www.youtube.com/watch?v=5Y6Z9X3Q8Hw' },
                     { title: 'Go Variables & Types', youtube_url: 'https://www.youtube.com/watch?v=6Y7Z1X4Q7Hw' },
@@ -209,7 +209,7 @@ async function seedManualCourses() {
                 title: 'Docker & Kubernetes for Beginners',
                 description: 'Master containerization and orchestration with Docker and Kubernetes.',
                 category: 'DevOps',
-                price: 0,
+                price: 649,
                 lessons: [
                     { title: 'Docker Introduction', youtube_url: 'https://www.youtube.com/watch?v=3Y4Z7X1Q8Hw' },
                     { title: 'Docker Images & Containers', youtube_url: 'https://www.youtube.com/watch?v=4Y5Z8X2Q7Hw' },
@@ -224,7 +224,7 @@ async function seedManualCourses() {
                 title: 'JavaScript Interview Preparation',
                 description: 'Prepare for JavaScript interviews with common questions and answers.',
                 category: 'Programming',
-                price: 29.99,
+                price: 399,
                 lessons: [
                     { title: 'JavaScript Fundamentals Review', youtube_url: 'https://www.youtube.com/watch?v=1Y2Z3X4Q9Hw' },
                     { title: 'Closures and Scope', youtube_url: 'https://www.youtube.com/watch?v=2Y3Z4X5Q8Hw' },
