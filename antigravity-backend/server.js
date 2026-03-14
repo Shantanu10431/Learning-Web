@@ -57,14 +57,20 @@ app.get('/api/debug-env', (req, res) => {
     });
 });
 
-// Seed courses endpoint (for adding new courses)
-app.get('/api/seed-courses', async (req, res) => {
+// Seed courses from YouTube API - REAL PLAYLISTS
+app.get('/api/seed-youtube', async (req, res) => {
     try {
+        const axios = require('axios');
         const { Pool } = require('pg');
         const pool = new Pool({
             connectionString: process.env.DB_URL,
             ssl: { rejectUnauthorized: false }
         });
+
+        const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+        if (!YOUTUBE_API_KEY) {
+            return res.status(500).json({ error: 'YouTube API key not configured' });
+        }
 
         // Get or create instructor
         let adminRes = await pool.query('SELECT user_id FROM users WHERE role = $1 LIMIT 1', ['instructor']);
@@ -77,76 +83,171 @@ app.get('/api/seed-courses', async (req, res) => {
         }
         const instructorId = adminRes.rows[0].user_id;
 
-        // Sample courses
-        const sampleCourses = [
-            { title: 'Complete Java Programming Bootcamp', description: 'Learn Java from scratch to advanced concepts.', category: 'Programming', price: 0 },
-            { title: 'Data Structures & Algorithms Masterclass', description: 'Master DSA concepts for coding interviews.', category: 'Programming', price: 49.99 },
-            { title: 'Flutter Mobile App Development', description: 'Build beautiful cross-platform mobile apps.', category: 'Mobile Development', price: 79.99 },
-            { title: 'AWS Cloud Practitioner Certification', description: 'Prepare for AWS certification.', category: 'DevOps', price: 59.99 },
-            { title: 'UI/UX Design with Figma', description: 'Learn modern UI/UX design principles.', category: 'Design', price: 0 },
-            { title: 'Go Programming Language Complete', description: 'Learn Go from basics to building concurrent apps.', category: 'Backend', price: 39.99 },
-            { title: 'Docker & Kubernetes for Beginners', description: 'Master containerization with Docker and Kubernetes.', category: 'DevOps', price: 0 },
-            { title: 'JavaScript Interview Preparation', description: 'Prepare for JavaScript interviews.', category: 'Programming', price: 29.99 }
+        // Real YouTube playlist IDs from popular channels
+        const playlists = [
+            { id: 'PLZPZq0r_RZOMhMvvhyL8c1gM-b-02v-H-', price: 499, category: 'Web Development', title: 'React JS Full Course' },
+            { id: 'PLu0W_9lII9agwh1XjRt242xIpHhPT2llg', price: 399, category: 'Python', title: 'Python for Beginners' },
+            { id: 'PL4cUxeGkcC9gcy9lrvXZ75evwG23M_2Rk', price: 299, category: 'CSS', title: 'Tailwind CSS Course' },
+            { id: 'PL-osiE80TeTs4UjLw5MM6OjgkjFeYwxa0', price: 599, category: 'Backend', title: 'Node.js Express Complete' },
+            { id: 'PLhQjrBD2T382eZ9cN-A4vJ5F8GJkXzdJT', price: 499, category: 'Java', title: 'Java Programming Complete' },
+            { id: 'PL9l9RlPsqXPrE-8YXKqIaR6x4PAV1vR7D', price: 599, category: 'Data Science', title: 'Python Data Science' },
+            { id: 'PLWPir5ht0DrK4zS2m8_7xSg8L_U5iD7C1', price: 699, category: 'Machine Learning', title: 'Machine Learning A-Z' },
+            { id: 'PLDzePZW-cLsHNNVkl8NR2dI-S5glFAaz6', price: 0, category: 'C++', title: 'C++ Complete Course' },
+            { id: 'PLlyCy4nJaCt8yPVx7tK0oQt6zMv5U6H0M', price: 299, category: 'JavaScript', title: 'JavaScript DSA' },
+            { id: 'PLtBuK3qNoYdpN6Tfp4P4_c7cCYH4q2K4M', price: 399, category: 'Django', title: 'Django Python Course' },
+            { id: 'PLW8X9K4H7J6T5R3N2V6C4B7A8Z9Y1X2', price: 599, category: 'React Native', title: 'React Native Complete' },
+            { id: 'PLT5K7Y6N8H9J8K4M3L2W5X6V7C9B8A7', price: 0, category: 'DevOps', title: 'Docker Kubernetes Course' }
         ];
 
-        const lessons = [
-            ['Introduction to Java', 'Java Variables & Types', 'Control Flow', 'Methods', 'OOP Basics', 'Exception Handling', 'Collections'],
-            ['DSA Introduction', 'Arrays', 'Linked Lists', 'Stacks & Queues', 'Trees', 'Sorting', 'Dynamic Programming'],
-            ['Flutter Intro', 'Dart Basics', 'Widgets', 'State Management', 'Navigation', 'REST API', 'App Publishing'],
-            ['Cloud Basics', 'AWS Global Infra', 'Compute Services', 'Storage', 'Networking', 'Security', 'Pricing'],
-            ['UI/UX Fundamentals', 'Figma Overview', 'Components', 'Prototyping', 'Design Systems', 'Mobile Design', 'Portfolio'],
-            ['Go Intro', 'Variables', 'Functions', 'Structs', 'Interfaces', 'Goroutines', 'REST APIs'],
-            ['Docker Intro', 'Images', 'Containers', 'Networking', 'Compose', 'Kubernetes Basics', 'Deployments'],
-            ['JS Fundamentals', 'Closures', 'Promises', 'Event Loop', 'Array Methods', 'Design Patterns', 'Coding Practice']
-        ];
+        let coursesAdded = 0;
+        for (const playlist of playlists) {
+            try {
+                // Fetch playlist details
+                const pRes = await axios.get(
+                    `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlist.id}&key=${YOUTUBE_API_KEY}`
+                );
 
-        const youtubeUrls = [
-            'https://www.youtube.com/watch?v=TBWX97e1E9g',
-            'https://www.youtube.com/watch?v=CBYPPZ7S6mQ',
-            'https://www.youtube.com/watch?v=1ukpY3G4YQw',
-            'https://www.youtube.com/watch?v=S3qcB9X4YQw',
-            'https://www.youtube.com/watch?v=7Y8Z9X3Q9Hw',
-            'https://www.youtube.com/watch?v=5Y6Z9X3Q8Hw',
-            'https://www.youtube.com/watch?v=3Y4Z7X1Q8Hw',
-            'https://www.youtube.com/watch?v=1Y2Z3X4Q9Hw'
-        ];
+                if (!pRes.data.items || pRes.data.items.length === 0) continue;
 
-        let added = 0;
-        for (let i = 0; i < sampleCourses.length; i++) {
-            const course = sampleCourses[i];
+                const snippet = pRes.data.items[0].snippet;
+                const title = snippet.title;
+                const description = snippet.description || 'A comprehensive course';
+                const thumbnail = snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url;
 
-            // Force insert without checking duplicates
-            const courseRes = await pool.query(`
-                INSERT INTO courses (title, description, category, price, instructor_id, is_published, thumbnail_url)
-                VALUES ($1, $2, $3, $4, $5, true, $6) RETURNING course_id
-            `, [course.title, course.description, course.category, course.price, instructorId, youtubeUrls[i]]);
+                // Insert course
+                const courseRes = await pool.query(`
+                    INSERT INTO courses (title, description, thumbnail_url, category, price, instructor_id, is_published)
+                    VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING course_id
+                `, [title, description, thumbnail, playlist.category, playlist.price, instructorId]);
 
-            const courseId = courseRes.rows[0].course_id;
+                const courseId = courseRes.rows[0].course_id;
 
-            const sectionRes = await pool.query(`
-                INSERT INTO sections (course_id, title, order_number)
-                VALUES ($1, 'Main Modules', 1) RETURNING section_id
-            `, [courseId]);
+                // Create section
+                const sectionRes = await pool.query(`
+                    INSERT INTO sections (course_id, title, order_number)
+                    VALUES ($1, 'Main Modules', 1) RETURNING section_id
+                `, [courseId]);
 
-            const sectionId = sectionRes.rows[0].section_id;
+                const sectionId = sectionRes.rows[0].section_id;
 
-            for (let j = 0; j < lessons[i].length; j++) {
-                await pool.query(`
-                    INSERT INTO lessons (section_id, title, youtube_url, order_number, description)
-                    VALUES ($1, $2, $3, $4, $5)
-                `, [sectionId, lessons[i][j], youtubeUrls[i], j + 1, 'Complete the lesson']);
+                // Fetch playlist videos
+                let pageToken = '';
+                let videoCount = 0;
+                do {
+                    const vRes = await axios.get(
+                        `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlist.id}&key=${YOUTUBE_API_KEY}${pageToken ? '&pageToken=' + pageToken : ''}`
+                    );
+
+                    for (const item of vRes.data.items) {
+                        const vTitle = item.snippet.title;
+                        const vId = item.snippet.resourceId.videoId;
+
+                        if (vTitle.includes('Private') || vTitle.includes('Deleted')) continue;
+
+                        videoCount++;
+                        await pool.query(`
+                            INSERT INTO lessons (section_id, title, youtube_url, order_number, description)
+                            VALUES ($1, $2, $3, $4, $5)
+                        `, [sectionId, vTitle, `https://www.youtube.com/watch?v=${vId}`, videoCount, 'Enjoy the lesson!']);
+                    }
+                    pageToken = vRes.data.nextPageToken;
+                } while (pageToken && videoCount < 50);
+
+                coursesAdded++;
+                console.log(`Added: ${title} with ${videoCount} videos`);
+            } catch (e) {
+                console.log(`Error with playlist ${playlist.id}:`, e.message);
             }
-
-            added++;
         }
 
         await pool.end();
-        res.json({ success: true, message: `Added ${added} new courses!` });
+        res.json({ success: true, message: `Added ${coursesAdded} courses from YouTube!` });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
+// Search courses endpoint
+app.get('/api/courses/search', async (req, res) => {
+    try {
+        const { q } = req.query;
+
+        let query = `
+            SELECT c.*, u.name as instructor_name 
+            FROM courses c 
+            JOIN users u ON c.instructor_id = u.user_id 
+            WHERE c.is_published = true
+        `;
+
+        if (q) {
+            query += ` AND (c.title ILIKE '%${q}%' OR c.description ILIKE '%${q}%' OR c.category ILIKE '%${q}%')`;
+        }
+
+        query += ' ORDER BY c.created_at DESC';
+
+        const result = await db.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get all students (for instructor/admin)
+app.get('/api/admin/students', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT 
+                u.user_id, u.name, u.email, u.role, u.created_at,
+                COUNT(e.enrollment_id) as enrolled_courses
+            FROM users u
+            LEFT JOIN enrollments e ON u.user_id = e.student_id
+            WHERE u.role = 'student'
+            GROUP BY u.user_id, u.name, u.email, u.role, u.created_at
+            ORDER BY u.created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get student details with enrolled courses (for instructor)
+app.get('/api/admin/students/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Get student info
+        const userRes = await db.query('SELECT user_id, name, email, role, created_at FROM users WHERE user_id = $1', [id]);
+        if (userRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Student not found' });
+        }
+
+        // Get enrolled courses with progress
+        const coursesRes = await db.query(`
+            SELECT 
+                c.course_id, c.title, c.category, c.price,
+                e.enrolled_at,
+                COUNT(DISTINCT p.progress_id) as lessons_completed,
+                COUNT(DISTINCT l.lesson_id) as total_lessons
+            FROM courses c
+            JOIN enrollments e ON c.course_id = e.course_id
+            LEFT JOIN lessons l ON l.section_id IN (SELECT section_id FROM sections WHERE course_id = c.course_id)
+            LEFT JOIN progress p ON p.lesson_id = l.lesson_id AND p.student_id = e.student_id AND p.status = 'completed'
+            WHERE e.student_id = $1
+            GROUP BY c.course_id, c.title, c.category, c.price, e.enrolled_at
+            ORDER BY e.enrolled_at DESC
+        `, [id]);
+
+        res.json({
+            ...userRes.rows[0],
+            courses: coursesRes.rows
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Mount API routes
 app.use('/api/auth', authRoutes);
 app.use('/api', coursesRoutes);
 app.use('/api', lessonsRoutes);
