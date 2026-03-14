@@ -24,10 +24,31 @@ const generateTokens = async (userId, email, role) => {
         // 30 days
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-        await db.query(
-            'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
-            [userId, tokenHash, expiresAt]
-        );
+        // Try to create refresh_tokens table if it doesn't exist (for existing databases)
+        try {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS refresh_tokens (
+                    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                    user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
+                    token_hash TEXT NOT NULL,
+                    expires_at TIMESTAMP NOT NULL,
+                    revoked_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+        } catch (e) {
+            console.log('Table creation skipped or failed:', e.message);
+        }
+
+        // Try to insert refresh token, but continue if it fails (for existing DBs without the table)
+        try {
+            await db.query(
+                'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+                [userId, tokenHash, expiresAt]
+            );
+        } catch (e) {
+            console.log('Refresh token insert failed (table may not exist):', e.message);
+        }
 
         return { accessToken, refreshTokenString };
     } catch (err) {
