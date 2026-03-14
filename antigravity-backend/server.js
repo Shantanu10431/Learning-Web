@@ -115,16 +115,11 @@ app.get('/api/seed-courses', async (req, res) => {
         for (let i = 0; i < sampleCourses.length; i++) {
             const course = sampleCourses[i];
 
-            // Check if course exists
-            const existing = await pool.query('SELECT course_id FROM courses WHERE title = $1', [course.title]);
-            if (existing.rows.length > 0) {
-                continue;
-            }
-
+            // Force insert without checking duplicates
             const courseRes = await pool.query(`
-                INSERT INTO courses (title, description, category, price, instructor_id, is_published)
-                VALUES ($1, $2, $3, $4, $5, true) RETURNING course_id
-            `, [course.title, course.description, course.category, course.price, instructorId]);
+                INSERT INTO courses (title, description, category, price, instructor_id, is_published, thumbnail_url)
+                VALUES ($1, $2, $3, $4, $5, true, $6) RETURNING course_id
+            `, [course.title, course.description, course.category, course.price, instructorId, youtubeUrls[i]]);
 
             const courseId = courseRes.rows[0].course_id;
 
