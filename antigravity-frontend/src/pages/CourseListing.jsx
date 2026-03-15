@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axiosConfig';
 import CourseCard from '../components/CourseCard';
-import { Search, X, Loader2 } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
+import { Search, X, Loader2, Bell } from 'lucide-react';
 
 const CourseListing = () => {
+    const { user } = React.useContext(AuthContext);
     const [courses, setCourses] = useState([]);
     const [filteredCourses, setFilteredCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [searching, setSearching] = useState(false);
+    const [showWelcome, setShowWelcome] = useState(true);
+    const [loginTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -67,6 +71,24 @@ const CourseListing = () => {
 
     return (
         <div className="py-12 px-6">
+            {/* Welcome Notification Box for Home Page */}
+            {user && showWelcome && (
+                <div className="mb-8 bg-gradient-to-r from-indigo-900/40 to-slate-800 border border-indigo-500/30 rounded-xl p-4 flex items-start sm:items-center justify-between gap-4 shadow-lg animate-fade-in-down">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                            <Bell size={24} className="animate-pulse" />
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold text-lg">Welcome to Antigravity LMS, {user.name}!</h3>
+                            <p className="text-indigo-200/70 text-sm">You logged in at {loginTime}. Start exploring our premium courses below.</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setShowWelcome(false)} className="text-slate-400 hover:text-white transition-colors p-2">
+                        <X size={20} />
+                    </button>
+                </div>
+            )}
+
             <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-4xl font-bold text-white mb-2">Explore Courses</h1>
