@@ -14,7 +14,7 @@ const PaymentModal = ({ isOpen, onClose, courseTitle, price, onComplete }) => {
     const [orderId] = useState(`ORD${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`);
 
     // Generate UPI payment link
-    const upiPaymentLink = `upi://pay?pa=antigravity@upi&pn=Antigravity%20LMS&am=${price}&tn=${encodeURIComponent(orderId)}&cu=INR`;
+    const upiPaymentLink = `upi://pay?pa=antigravity@upi&pn=Hell%20Paradise%20LMS&am=${price}&tn=${encodeURIComponent(orderId)}&cu=INR`;
 
     useEffect(() => {
         if (!isOpen) {

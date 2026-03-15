@@ -38,7 +38,7 @@ const AIChatbot = () => {
             } else if (lowerQuery.includes('course') || lowerQuery.includes('enroll') || lowerQuery.includes('learn')) {
                 botResponse = "To learn, head over to the Explore tab! You'll find top-tier courses downloaded straight from YouTube playlists. Once enrolled, you can access the powerful web video player.";
             } else if (lowerQuery.includes('hello') || lowerQuery.includes('hi')) {
-                botResponse = "Hi there! I'm here to answer any questions about the Antigravity LMS layout, payments, profiles, or course functionality.";
+                botResponse = "Hi there! I'm here to answer any questions about the Hell Paradise LMS layout, payments, profiles, or course functionality.";
             }
 
             setMessages(prev => [...prev, { type: 'bot', text: botResponse }]);

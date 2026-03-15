@@ -79,7 +79,7 @@ const CourseListing = () => {
                             <Bell size={24} className="animate-pulse" />
                         </div>
                         <div>
-                            <h3 className="text-white font-bold text-lg">Welcome to Antigravity LMS, {user.name}!</h3>
+                            <h3 className="text-white font-bold text-lg">Welcome to Hell Paradise LMS, {user.name}!</h3>
                             <p className="text-indigo-200/70 text-sm">You logged in at {loginTime}. Start exploring our premium courses below.</p>
                         </div>
                     </div>

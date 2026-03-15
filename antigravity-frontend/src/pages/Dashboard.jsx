@@ -71,7 +71,7 @@ const CertificateModal = ({ course, user, onClose }) => {
             <body>
                 <div class="certificate">
                     <div class="badge">COMPLETED</div>
-                    <div class="header">Antigravity Learning</div>
+                    <div class="header">Hell Paradise Learning</div>
                     <div class="title">Certificate of Completion</div>
                     <div class="subtitle">This is to certify that</div>
                     <div class="recipient">${user?.name || 'Student'}</div>
@@ -110,7 +110,7 @@ const CertificateModal = ({ course, user, onClose }) => {
                 <div className="p-8 bg-white">
                     <div style={{ border: '8px solid #6366f1', padding: '40px', textAlign: 'center', position: 'relative', background: '#fff' }}>
                         <div style={{ position: 'absolute', top: '15px', left: '15px', right: '15px', bottom: '15px', border: '2px solid #6366f1', pointerEvents: 'none' }}></div>
-                        <div style={{ fontSize: '12px', color: '#6366f1', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '15px' }}>ANTIGRAVITY LEARNING</div>
+                        <div style={{ fontSize: '12px', color: '#6366f1', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '15px' }}>HELL PARADISE LEARNING</div>
                         <div style={{ fontFamily: 'Georgia, serif', fontSize: '36px', color: '#1e293b', marginBottom: '8px' }}>Certificate of Completion</div>
                         <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '30px' }}>This is to certify that</div>
                         <div style={{ fontFamily: 'Georgia, serif', fontSize: '28px', color: '#6366f1', marginBottom: '15px' }}>{user?.name || 'Student'}</div>

@@ -19,10 +19,11 @@ const Navigation = () => {
         <nav className="bg-slate-900 border-b border-slate-800 px-6 py-4">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
                 <Link to="/" className="flex items-center gap-2 text-xl font-bold text-white">
-                    <div className="w-8 h-8 rounded bg-indigo-600 flex items-center justify-center">
-                        <span className="text-white">A</span>
+                    <img src="/logo.jpg" alt="Hell Paradise Logo" className="w-10 h-10 rounded-full object-cover" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                    <div className="hidden w-8 h-8 rounded bg-red-800 items-center justify-center">
+                        <span className="text-white">HP</span>
                     </div>
-                    Antigravity LMS
+                    Hell Paradise LMS
                 </Link>
 
                 <div className="flex items-center gap-6">
@@ -63,7 +64,7 @@ const Navigation = () => {
                                                 </div>
                                                 <div>
                                                     <h4 className="text-white text-sm font-medium mb-1">Welcome back, {user.name}!</h4>
-                                                    <p className="text-slate-400 text-xs line-clamp-2">You successfully logged in to Antigravity LMS. Let's continue learning!</p>
+                                                    <p className="text-slate-400 text-xs line-clamp-2">You successfully logged in to Hell Paradise LMS. Let's continue learning!</p>
                                                     <p className="text-slate-500 text-xs mt-2">{loginTime}</p>
                                                 </div>
                                             </div>
