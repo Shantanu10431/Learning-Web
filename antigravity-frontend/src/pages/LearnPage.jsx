@@ -222,10 +222,10 @@ const LearnPage = () => {
 
                         <button
                             onClick={() => handleMarkComplete(resumeTime)}
-                            disabled={completedLessons.includes(lessonId)}
-                            className={`${completedLessons.includes(lessonId) ? 'bg-slate-800 text-emerald-400 cursor-default' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 whitespace-nowrap border border-transparent ${completedLessons.includes(lessonId) ? 'border-emerald-500/30' : ''} disabled:opacity-50`}
+                            disabled={completedLessons.some(id => String(id) === String(lessonId))}
+                            className={`${completedLessons.some(id => String(id) === String(lessonId)) ? 'bg-slate-800 text-emerald-400 cursor-default' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 whitespace-nowrap border border-transparent ${completedLessons.some(id => String(id) === String(lessonId)) ? 'border-emerald-500/30' : ''} disabled:opacity-50`}
                         >
-                            <CheckCircle size={20} /> {completedLessons.includes(lessonId) ? 'Completed' : 'Mark Complete'}
+                            <CheckCircle size={20} /> {completedLessons.some(id => String(id) === String(lessonId)) ? 'Completed' : 'Mark Complete'}
                         </button>
                     </div>
 
