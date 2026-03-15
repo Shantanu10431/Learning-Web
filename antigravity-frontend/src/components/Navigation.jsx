@@ -19,7 +19,7 @@ const Navigation = () => {
         <nav className="bg-slate-900 border-b border-slate-800 px-6 py-4">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
                 <Link to="/" className="flex items-center gap-2 text-xl font-bold text-white">
-                    <img src="/logo.jpg" alt="Hell Paradise Logo" className="w-10 h-10 rounded-full object-cover" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                    <img src="/logo.png" alt="Hell Paradise Logo" className="w-10 h-10 rounded-full object-cover" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
                     <div className="hidden w-8 h-8 rounded bg-red-800 items-center justify-center">
                         <span className="text-white">HP</span>
                     </div>
