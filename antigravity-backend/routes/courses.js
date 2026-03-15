@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/courses', async (req, res) => {
     try {
         const result = await db.query(`
-      SELECT c.*, u.name as instructor_name 
+      SELECT DISTINCT c.*, u.name as instructor_name 
       FROM courses c 
       JOIN users u ON c.instructor_id = u.user_id 
       WHERE is_published = true
@@ -27,7 +27,7 @@ router.get('/courses/search', async (req, res) => {
 
         // Ensure price is fetched here too since the frontend may display it
         const result = await db.query(`
-      SELECT c.*, u.name as instructor_name 
+      SELECT DISTINCT c.*, u.name as instructor_name 
       FROM courses c 
       JOIN users u ON c.instructor_id = u.user_id 
       WHERE is_published = true 
@@ -100,7 +100,7 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
         if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
         const course = courseRes.rows[0];
 
-        // Check enrollment AND payment status
+        // Check enrollment
         const enrollRes = await db.query(
             'SELECT * FROM enrollments WHERE student_id = $1 AND course_id = $2',
             [studentId, id]
@@ -110,10 +110,11 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'Not enrolled in this course' });
         }
 
-        // TEMPORARILY ALLOW ACCESS - Skip payment check for demo
-        // if (parseFloat(course.price) > 0 && enrollRes.rows[0].payment_status !== 'completed') {
-        //     return res.status(402).json({ error: 'Payment required to access course content' });
-        // }
+        // Check if user has paid for the course OR if course is free
+        const isPaid = parseFloat(course.price) === 0 || enrollRes.rows[0].payment_status === 'completed';
+
+        // All lessons locked unless paid
+        const allLessonsLocked = !isPaid;
 
         const sectionsRes = await db.query('SELECT * FROM sections WHERE course_id = $1 ORDER BY order_number', [id]);
         const sectionIds = sectionsRes.rows.map(s => s.section_id);
@@ -132,10 +133,15 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
             lessons = lessonsRes.rows;
         }
 
-        let previousCompleted = true; // First lesson is unlocked
+        let previousCompleted = true; // First lesson is unlocked if paid
         for (let i = 0; i < lessons.length; i++) {
-            lessons[i].locked = !previousCompleted;
-            previousCompleted = lessons[i].is_completed;
+            // Lock lessons based on payment status
+            if (allLessonsLocked) {
+                lessons[i].locked = true; // All locked if not paid
+            } else {
+                lessons[i].locked = !previousCompleted;
+                previousCompleted = lessons[i].is_completed;
+            }
         }
 
         course.sections = sectionsRes.rows.map(section => ({
@@ -143,13 +149,16 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
             lessons: lessons.filter(l => l.section_id === section.section_id).map(l => ({
                 lesson_id: l.lesson_id,
                 title: l.title,
-                youtube_url: l.youtube_url, // Never nullify the URL, let the frontend handle lock states
+                youtube_url: l.youtube_url,
                 duration_seconds: l.duration_seconds,
                 order_number: l.order_number,
                 is_completed: l.is_completed,
                 locked: l.locked
             }))
         }));
+
+        // Add payment status to response so frontend knows if user can play
+        course.user_has_paid = isPaid;
 
         res.json(course);
     } catch (err) {
