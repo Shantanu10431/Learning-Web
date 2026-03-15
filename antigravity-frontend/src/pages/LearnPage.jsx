@@ -34,10 +34,17 @@ const LearnPage = () => {
                 api.get(`/progress/videos/${lId}`)
             ]);
             console.log('Lesson data:', lessonRes.data);
+
+            if (!lessonRes.data) {
+                setError('Lesson not found');
+                return;
+            }
+
             setCurrentLesson(lessonRes.data);
             setResumeTime(progRes.data.last_position_seconds || 0);
         } catch (err) {
             console.error('Error fetching lesson:', err);
+            setError('Failed to load lesson: ' + (err.response?.data?.error || err.message));
         }
     };
 
@@ -62,13 +69,16 @@ const LearnPage = () => {
                     await fetchLessonLockAndResume(targetLessonId);
                 }
             } catch (err) {
-                console.error(err);
+                console.error('Full error:', err);
+                console.error('Error response:', err.response?.data);
                 if (err.response?.status === 402) {
                     setError('Payment required to access this course. Please complete enrollment.');
                 } else if (err.response?.status === 403) {
-                    setError('You are not enrolled in this course.');
+                    setError('You are not enrolled in this course. Please enroll first.');
+                } else if (err.response?.status === 404) {
+                    setError('Course not found.');
                 } else {
-                    setError('Failed to load course. It may be unavailable.');
+                    setError('Failed to load course: ' + (err.response?.data?.error || err.message));
                 }
             }
             setLoading(false);
