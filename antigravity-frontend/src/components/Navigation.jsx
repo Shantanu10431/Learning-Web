@@ -1,12 +1,14 @@
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { BookOpen, User, LogOut } from 'lucide-react';
+import { BookOpen, User, LogOut, Bell } from 'lucide-react';
 import ProfileHoverCard from './ProfileHoverCard';
 
 const Navigation = () => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
+    const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
+    const [loginTime] = React.useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
     const handleLogout = () => {
         logout();
@@ -33,6 +35,42 @@ const Navigation = () => {
                             <Link to={user.role === 'instructor' ? '/instructor' : '/dashboard'} className="text-slate-300 hover:text-white transition-colors">
                                 Dashboard
                             </Link>
+
+                            {/* Notifications Dropdown */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                                    className="text-slate-300 hover:text-white transition-colors relative"
+                                >
+                                    <Bell size={18} />
+                                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500 border-2 border-slate-900"></span>
+                                    </span>
+                                </button>
+
+                                {/* Notification Box */}
+                                {isNotificationOpen && (
+                                    <div className="absolute right-0 top-full mt-4 w-80 bg-slate-800 rounded-xl border border-slate-700 shadow-2xl overflow-hidden z-50">
+                                        <div className="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
+                                            <h3 className="text-white font-bold text-sm">Notifications</h3>
+                                            <span className="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full">1 New</span>
+                                        </div>
+                                        <div className="max-h-80 overflow-y-auto">
+                                            <div className="p-4 border-b border-slate-700 hover:bg-slate-700/50 transition-colors flex gap-4 items-start cursor-pointer">
+                                                <div className="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center flex-shrink-0">
+                                                    <User size={20} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-white text-sm font-medium mb-1">Welcome back, {user.name}!</h4>
+                                                    <p className="text-slate-400 text-xs line-clamp-2">You successfully logged in to Antigravity LMS. Let's continue learning!</p>
+                                                    <p className="text-slate-500 text-xs mt-2">{loginTime}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Profile with Hover Card */}
                             <div className="relative group">
