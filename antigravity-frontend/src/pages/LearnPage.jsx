@@ -44,7 +44,8 @@ const LearnPage = () => {
             setResumeTime(progRes.data.last_position_seconds || 0);
         } catch (err) {
             console.error('Error fetching lesson:', err);
-            setError('Failed to load lesson: ' + (err.response?.data?.error || err.message));
+            console.error('Error response:', err.response);
+            setError('Failed to load lesson: ' + JSON.stringify(err.response?.data || err.message));
         }
     };
 
