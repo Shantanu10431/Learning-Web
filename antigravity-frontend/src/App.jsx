@@ -47,6 +47,12 @@ function App() {
                                 </ProtectedRoute>
                             } />
 
+                            <Route path="/learn/:courseId" element={
+                                <ProtectedRoute roles={['student', 'instructor', 'admin']}>
+                                    <LearnPage />
+                                </ProtectedRoute>
+                            } />
+
                             <Route path="/learn/:courseId/:lessonId" element={
                                 <ProtectedRoute roles={['student', 'instructor', 'admin']}>
                                     <LearnPage />
