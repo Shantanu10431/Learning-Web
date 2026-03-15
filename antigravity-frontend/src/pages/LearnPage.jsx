@@ -29,23 +29,47 @@ const LearnPage = () => {
     const fetchLessonLockAndResume = async (lId) => {
         try {
             console.log('Fetching lesson:', lId);
-            const [lessonRes, progRes] = await Promise.all([
-                api.get(`/lessons/${lId}`),
-                api.get(`/progress/videos/${lId}`)
-            ]);
-            console.log('Lesson data:', lessonRes.data);
 
-            if (!lessonRes.data) {
+            // Get lesson data from the course tree that's already loaded
+            let lessonData = null;
+            if (course && course.sections) {
+                for (const section of course.sections) {
+                    const found = section.lessons?.find(l => l.lesson_id === lId);
+                    if (found) {
+                        lessonData = found;
+                        break;
+                    }
+                }
+            }
+
+            if (!lessonData) {
+                // Fallback: try the API if not found in course tree
+                try {
+                    const lessonRes = await api.get(`/lessons/${lId}`);
+                    lessonData = lessonRes.data;
+                } catch (e) {
+                    console.error('Lesson not found in course tree or API');
+                }
+            }
+
+            if (!lessonData) {
                 setError('Lesson not found');
                 return;
             }
 
-            setCurrentLesson(lessonRes.data);
-            setResumeTime(progRes.data.last_position_seconds || 0);
+            console.log('Lesson data from tree:', lessonData);
+            setCurrentLesson(lessonData);
+
+            // Try to get resume time
+            try {
+                const progRes = await api.get(`/progress/videos/${lId}`);
+                setResumeTime(progRes.data.last_position_seconds || 0);
+            } catch (e) {
+                console.log('No progress found');
+            }
         } catch (err) {
             console.error('Error fetching lesson:', err);
-            console.error('Error response:', err.response);
-            setError('Failed to load lesson: ' + JSON.stringify(err.response?.data || err.message));
+            setError('Failed to load lesson: ' + err.message);
         }
     };
 
@@ -67,7 +91,30 @@ const LearnPage = () => {
                 }
 
                 if (targetLessonId) {
-                    await fetchLessonLockAndResume(targetLessonId);
+                    // Get lesson from course tree that's already loaded
+                    let lessonFromTree = null;
+                    if (courseRes.data && courseRes.data.sections) {
+                        for (const section of courseRes.data.sections) {
+                            const found = section.lessons?.find(l => l.lesson_id === targetLessonId);
+                            if (found) {
+                                lessonFromTree = found;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (lessonFromTree) {
+                        console.log('Lesson from tree:', lessonFromTree);
+                        setCurrentLesson(lessonFromTree);
+                        // Get resume time
+                        try {
+                            const progRes = await api.get(`/progress/videos/${targetLessonId}`);
+                            setResumeTime(progRes.data.last_position_seconds || 0);
+                        } catch (e) { }
+                    } else {
+                        // Fallback to API
+                        await fetchLessonLockAndResume(targetLessonId);
+                    }
                 }
             } catch (err) {
                 console.error('Full error:', err);
