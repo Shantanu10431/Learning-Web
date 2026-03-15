@@ -147,16 +147,35 @@ router.get('/lessons/:id', authMiddleware, async (req, res) => {
         const { id } = req.params;
         const studentId = req.user.user_id;
 
+        console.log('Getting lesson:', id, 'for student:', studentId);
+
         const lessonRes = await db.query(`
             SELECT l.*, s.course_id 
             FROM lessons l
             JOIN sections s ON l.section_id = s.section_id
             WHERE lesson_id = $1
         `, [id]);
-        if (lessonRes.rows.length === 0) return res.status(404).json({ error: 'Lesson not found' });
+
+        if (lessonRes.rows.length === 0) {
+            console.log('Lesson not found:', id);
+            return res.status(404).json({ error: 'Lesson not found' });
+        }
 
         const currentLesson = lessonRes.rows[0];
         const courseId = currentLesson.course_id;
+
+        console.log('Lesson found, courseId:', courseId);
+
+        // Check if user is enrolled in this course
+        const enrollRes = await db.query(
+            'SELECT * FROM enrollments WHERE student_id = $1 AND course_id = $2',
+            [studentId, courseId]
+        );
+
+        if (enrollRes.rows.length === 0) {
+            console.log('User not enrolled in course:', courseId);
+            return res.status(403).json({ error: 'Not enrolled in this course' });
+        }
 
         const allLessonsRes = await db.query(`
             SELECT l.lesson_id, p.status
@@ -192,8 +211,8 @@ router.get('/lessons/:id', authMiddleware, async (req, res) => {
             next_lesson_id
         });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).json({ error: 'Server error' });
+        console.error('Error in /lessons/:id:', err.message);
+        res.status(500).json({ error: 'Server error: ' + err.message });
     }
 });
 
