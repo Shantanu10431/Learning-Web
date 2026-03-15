@@ -37,6 +37,7 @@ const enrollmentRoutes = require('./routes/enrollment');
 const progressRoutes = require('./routes/progress');
 
 const db = require('./db/pool');
+const { authMiddleware } = require('./middleware/auth');
 
 // Mount Routes
 app.get('/api/health', async (req, res) => {
@@ -457,6 +458,75 @@ app.get('/api/admin/students/:id', async (req, res) => {
             GROUP BY c.course_id, c.title, c.category, c.price, e.enrolled_at
             ORDER BY e.enrolled_at DESC
         `, [id]);
+
+        res.json({
+            ...userRes.rows[0],
+            courses: coursesRes.rows
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get instructor's students - students enrolled in instructor's courses
+app.get('/api/instructor/students', authMiddleware, async (req, res) => {
+    try {
+        const instructorId = req.user.user_id;
+        const isAdmin = req.user.role === 'admin';
+
+        // Get students enrolled in instructor's courses
+        const result = await db.query(`
+            SELECT 
+                u.user_id, u.name, u.email, u.role, u.created_at,
+                COUNT(DISTINCT e.enrollment_id) as enrolled_courses,
+                COUNT(DISTINCT c.course_id) as instructor_courses,
+                MAX(e.enrolled_at) as last_enrolled
+            FROM users u
+            JOIN enrollments e ON u.user_id = e.student_id
+            JOIN courses c ON e.course_id = c.course_id
+            WHERE c.instructor_id = $1 OR $2 = true
+            GROUP BY u.user_id, u.name, u.email, u.role, u.created_at
+            ORDER BY MAX(e.enrolled_at) DESC
+        `, [instructorId, isAdmin]);
+
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get detailed student progress for instructor's courses
+app.get('/api/instructor/students/:id', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const instructorId = req.user.user_id;
+        const isAdmin = req.user.role === 'admin';
+
+        // Get student info
+        const userRes = await db.query('SELECT user_id, name, email, role, created_at FROM users WHERE user_id = $1', [id]);
+        if (userRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Student not found' });
+        }
+
+        // Get enrolled courses with detailed progress - only instructor's courses
+        const coursesRes = await db.query(`
+            SELECT 
+                c.course_id, c.title, c.category, c.price,
+                e.enrolled_at, e.payment_status,
+                COUNT(DISTINCT l.lesson_id) as total_lessons,
+                COUNT(DISTINCT CASE WHEN p.status = 'completed' THEN p.progress_id END) as lessons_completed,
+                MAX(p.last_position_seconds) as last_watched_seconds,
+                MAX(p.updated_at) as last_watched_at,
+                MAX(l.title) as last_watched_lesson
+            FROM courses c
+            JOIN enrollments e ON c.course_id = e.course_id
+            JOIN sections s ON s.course_id = c.course_id
+            JOIN lessons l ON l.section_id = s.section_id
+            LEFT JOIN progress p ON p.lesson_id = l.lesson_id AND p.student_id = e.student_id
+            WHERE e.student_id = $1 AND (c.instructor_id = $2 OR $3 = true)
+            GROUP BY c.course_id, c.title, c.category, c.price, e.enrolled_at, e.payment_status
+            ORDER BY e.enrolled_at DESC
+        `, [id, instructorId, isAdmin]);
 
         res.json({
             ...userRes.rows[0],

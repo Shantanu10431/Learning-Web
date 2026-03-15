@@ -38,7 +38,8 @@ const InstructorDash = () => {
     const fetchStudents = async () => {
         setStudentsLoading(true);
         try {
-            const res = await api.get('/admin/students');
+            // Use instructor-specific endpoint instead of admin
+            const res = await api.get('/instructor/students');
             setStudents(res.data);
         } catch (err) {
             console.error(err);
@@ -59,7 +60,8 @@ const InstructorDash = () => {
 
     const fetchStudentDetails = async (studentId) => {
         try {
-            const res = await api.get(`/admin/students/${studentId}`);
+            // Use instructor-specific endpoint
+            const res = await api.get(`/instructor/students/${studentId}`);
             setStudentDetails(res.data);
         } catch (err) {
             console.error(err);
