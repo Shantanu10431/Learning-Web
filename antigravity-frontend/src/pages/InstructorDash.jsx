@@ -439,8 +439,13 @@ const InstructorDash = () => {
                                 <div className="space-y-3">
                                     {studentDetails.courses.map(course => (
                                         <div key={course.course_id} className="bg-slate-900 rounded-lg p-4 border border-slate-700">
-                                            <h5 className="text-white font-medium mb-2">{course.title}</h5>
-                                            <div className="flex items-center justify-between text-sm">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <h5 className="text-white font-medium">{course.title}</h5>
+                                                <span className={`text-xs px-2 py-0.5 rounded ${course.payment_status === 'completed' ? 'bg-green-600/20 text-green-400' : 'bg-yellow-600/20 text-yellow-400'}`}>
+                                                    {course.payment_status === 'completed' ? 'Paid' : 'Pending'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm mb-2">
                                                 <span className="text-slate-400">{course.category}</span>
                                                 <span className="text-indigo-400">₹{course.price}</span>
                                             </div>
@@ -456,6 +461,17 @@ const InstructorDash = () => {
                                                     />
                                                 </div>
                                             </div>
+                                            {course.last_watched_lesson && (
+                                                <div className="mt-3 pt-3 border-t border-slate-700">
+                                                    <div className="text-xs text-slate-500">Last watched</div>
+                                                    <div className="text-sm text-slate-300 truncate">{course.last_watched_lesson}</div>
+                                                    {course.last_watched_at && (
+                                                        <div className="text-xs text-slate-500 mt-1">
+                                                            {new Date(course.last_watched_at).toLocaleString()}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
