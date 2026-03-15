@@ -28,21 +28,25 @@ const LearnPage = () => {
 
     const fetchLessonLockAndResume = async (lId) => {
         try {
+            console.log('Fetching lesson:', lId);
             const [lessonRes, progRes] = await Promise.all([
                 api.get(`/lessons/${lId}`),
                 api.get(`/progress/videos/${lId}`)
             ]);
+            console.log('Lesson data:', lessonRes.data);
             setCurrentLesson(lessonRes.data);
             setResumeTime(progRes.data.last_position_seconds || 0);
         } catch (err) {
-            console.error(err);
+            console.error('Error fetching lesson:', err);
         }
     };
 
     useEffect(() => {
         const fetchCourseAndLesson = async () => {
             try {
+                console.log('Fetching course tree for:', courseId);
                 const courseRes = await api.get(`/courses/${courseId}/tree`);
+                console.log('Course tree response:', courseRes.data);
                 setCourse(courseRes.data);
 
                 let targetLessonId = lessonId;

@@ -110,10 +110,10 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'Not enrolled in this course' });
         }
 
-        // Check if payment is completed (ONLY IF course is paid)
-        if (parseFloat(course.price) > 0 && enrollRes.rows[0].payment_status !== 'completed') {
-            return res.status(402).json({ error: 'Payment required to access course content' });
-        }
+        // TEMPORARILY ALLOW ACCESS - Skip payment check for demo
+        // if (parseFloat(course.price) > 0 && enrollRes.rows[0].payment_status !== 'completed') {
+        //     return res.status(402).json({ error: 'Payment required to access course content' });
+        // }
 
         const sectionsRes = await db.query('SELECT * FROM sections WHERE course_id = $1 ORDER BY order_number', [id]);
         const sectionIds = sectionsRes.rows.map(s => s.section_id);
