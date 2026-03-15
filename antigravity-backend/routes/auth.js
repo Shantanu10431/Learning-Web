@@ -77,7 +77,7 @@ router.post('/signup', async (req, res) => {
         const password_hash = await bcrypt.hash(password, salt);
 
         const newUser = await db.query(
-            'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING user_id, name, email, role',
+            'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING user_id, name, email, role, status',
             [name, email, password_hash, role || 'student']
         );
 
@@ -100,6 +100,11 @@ router.post('/login', async (req, res) => {
         if (userResult.rows.length === 0) return res.status(400).json({ error: 'Invalid Credentials' });
 
         const user = userResult.rows[0];
+
+        if (user.status === 'pending') {
+            return res.status(403).json({ error: 'Account pending admin approval' });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) return res.status(400).json({ error: 'Invalid Credentials' });
 
@@ -112,7 +117,7 @@ router.post('/login', async (req, res) => {
         const { accessToken, refreshTokenString } = await generateTokens(user.user_id, user.email, user.role);
 
         setRefreshCookie(res, refreshTokenString);
-        res.json({ token: accessToken, user: { user_id: user.user_id, name: user.name, email: user.email, role: user.role } });
+        res.json({ token: accessToken, user: { user_id: user.user_id, name: user.name, email: user.email, role: user.role, status: user.status } });
     } catch (err) {
         console.error('VERCEL LOGIN ERROR:', err);
         // Provide more detailed error for debugging
@@ -179,6 +184,62 @@ router.post('/logout', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');
+    }
+});
+
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const userCheck = await db.query('SELECT user_id FROM users WHERE email = $1', [email]);
+        if (userCheck.rows.length === 0) {
+            return res.json({ message: 'If that email is in our system, we have sent a reset link to it.' });
+        }
+
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+        await db.query(
+            'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3',
+            [tokenHash, expiresAt, email]
+        );
+
+        res.json({
+            message: 'If that email is in our system, we have sent a reset link to it.',
+            devResetToken: resetToken
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        const userRes = await db.query(
+            'SELECT user_id FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()',
+            [tokenHash]
+        );
+
+        if (userRes.rows.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired reset token' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(newPassword, salt);
+
+        await db.query(
+            'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE user_id = $2',
+            [password_hash, userRes.rows[0].user_id]
+        );
+
+        res.json({ success: true, message: 'Password has been reset successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
     }
 });
 

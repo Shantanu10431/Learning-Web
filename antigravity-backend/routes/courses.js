@@ -100,18 +100,26 @@ router.get('/courses/:id/tree', authMiddleware, async (req, res) => {
         if (courseRes.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
         const course = courseRes.rows[0];
 
-        // Check enrollment
-        const enrollRes = await db.query(
-            'SELECT * FROM enrollments WHERE student_id = $1 AND course_id = $2',
-            [studentId, id]
-        );
+        const isOwnerOrAdmin = course.instructor_id === studentId || req.user.role === 'admin';
 
-        if (enrollRes.rows.length === 0) {
-            return res.status(403).json({ error: 'Not enrolled in this course' });
+        let isPaid = false;
+
+        if (isOwnerOrAdmin) {
+            isPaid = true;
+        } else {
+            // Check enrollment
+            const enrollRes = await db.query(
+                'SELECT * FROM enrollments WHERE student_id = $1 AND course_id = $2',
+                [studentId, id]
+            );
+
+            if (enrollRes.rows.length === 0) {
+                return res.status(403).json({ error: 'Not enrolled in this course' });
+            }
+
+            // Check if user has paid for the course OR if course is free
+            isPaid = parseFloat(course.price) === 0 || enrollRes.rows[0].payment_status === 'completed';
         }
-
-        // Check if user has paid for the course OR if course is free
-        const isPaid = parseFloat(course.price) === 0 || enrollRes.rows[0].payment_status === 'completed';
 
         // All lessons locked unless paid
         const allLessonsLocked = !isPaid;

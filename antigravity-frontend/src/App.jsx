@@ -13,6 +13,8 @@ import CourseListing from './pages/CourseListing';
 import CourseDetails from './pages/CourseDetails';
 import LearnPage from './pages/LearnPage';
 import Profile from './pages/Profile';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import AIChatbot from './components/AIChatbot';
 
 function App() {
@@ -27,6 +29,8 @@ function App() {
                             <Route path="/" element={<Navigate to="/courses" replace />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/signup" element={<Signup />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} />
+                            <Route path="/reset-password/:token" element={<ResetPassword />} />
                             <Route path="/courses" element={<CourseListing />} />
                             <Route path="/courses/:id" element={<CourseDetails />} />
 

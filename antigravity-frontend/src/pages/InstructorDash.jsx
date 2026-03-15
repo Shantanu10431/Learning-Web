@@ -137,9 +137,31 @@ const InstructorDash = () => {
         }
     };
 
+    const handleApproveUser = async (userId) => {
+        try {
+            await api.put(`/admin/users/${userId}/approve`);
+            fetchAllUsers();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to approve user: ' + (err.response?.data?.error || err.message));
+        }
+    };
+
     const handleStudentClick = (student) => {
         setSelectedStudent(student);
         fetchStudentDetails(student.user_id);
+    };
+
+    const handleRemoveStudentFromCourse = async (courseId, studentId) => {
+        if (!window.confirm('Are you sure you want to remove this student from the course?')) return;
+        try {
+            await api.delete(`/enrollment/instructor/courses/${courseId}/students/${studentId}`);
+            fetchStudentDetails(studentId);
+            // Assuming this endpoint gets added later or we just mutate state locally 
+        } catch (err) {
+            console.error(err);
+            alert('Failed to remove student');
+        }
     };
 
     const addLessonInput = () => {
@@ -164,7 +186,10 @@ const InstructorDash = () => {
                     <p className="text-slate-400">Manage your courses and track enrolled students</p>
                 </div>
                 <button
-                    onClick={() => setShowCreateForm(!showCreateForm)}
+                    onClick={() => {
+                        setShowCreateForm(!showCreateForm);
+                        if (!showCreateForm) setActiveTab('courses');
+                    }}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2"
                 >
                     <PlusCircle size={20} /> Create New Course
@@ -440,10 +465,22 @@ const InstructorDash = () => {
                                     {studentDetails.courses.map(course => (
                                         <div key={course.course_id} className="bg-slate-900 rounded-lg p-4 border border-slate-700">
                                             <div className="flex items-center justify-between mb-2">
-                                                <h5 className="text-white font-medium">{course.title}</h5>
-                                                <span className={`text-xs px-2 py-0.5 rounded ${course.payment_status === 'completed' ? 'bg-green-600/20 text-green-400' : 'bg-yellow-600/20 text-yellow-400'}`}>
-                                                    {course.payment_status === 'completed' ? 'Paid' : 'Pending'}
-                                                </span>
+                                                <h5 className="text-white font-medium pr-2 truncate">{course.title}</h5>
+                                                <div className="flex gap-2 items-center flex-shrink-0">
+                                                    <span className={`text-xs px-2 py-0.5 rounded ${course.payment_status === 'completed' ? 'bg-green-600/20 text-green-400' : 'bg-yellow-600/20 text-yellow-400'}`}>
+                                                        {course.payment_status === 'completed' ? 'Paid' : 'Pending'}
+                                                    </span>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleRemoveStudentFromCourse(course.course_id, selectedStudent.user_id);
+                                                        }}
+                                                        className="text-white hover:text-red-400 px-2 py-0.5 bg-red-600/20 hover:bg-red-600/40 rounded transition-colors text-xs"
+                                                        title="Unenroll Student"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div className="flex items-center justify-between text-sm mb-2">
                                                 <span className="text-slate-400">{course.category}</span>
@@ -505,6 +542,8 @@ const InstructorDash = () => {
                                         <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Role</th>
                                         <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Enrolled</th>
                                         <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Created</th>
+                                        <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Status</th>
+                                        <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700">
@@ -533,6 +572,21 @@ const InstructorDash = () => {
                                             <td className="px-4 py-3 text-slate-400">{u.enrolled_courses || 0} courses</td>
                                             <td className="px-4 py-3 text-slate-400 text-sm">
                                                 {new Date(u.created_at).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className={`px-2 py-1 rounded text-xs font-medium ${u.status === 'approved' ? 'bg-green-600/20 text-green-400' : 'bg-yellow-600/20 text-yellow-400'}`}>
+                                                    {u.status?.toUpperCase() || 'PENDING'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                {u.status !== 'approved' && (
+                                                    <button
+                                                        onClick={() => handleApproveUser(u.user_id)}
+                                                        className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded transition-colors"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

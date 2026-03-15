@@ -168,4 +168,28 @@ router.delete('/enroll/:courseId', authMiddleware, async (req, res) => {
     }
 });
 
+router.delete('/instructor/courses/:courseId/students/:studentId', authMiddleware, async (req, res) => {
+    try {
+        const { courseId, studentId } = req.params;
+        const currentUserId = req.user.user_id;
+
+        if (req.user.role !== 'instructor' && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Not authorized' });
+        }
+
+        const checkCourse = await db.query('SELECT instructor_id FROM courses WHERE course_id = $1', [courseId]);
+        if (checkCourse.rows.length === 0) return res.status(404).json({ error: 'Course not found' });
+
+        if (checkCourse.rows[0].instructor_id !== currentUserId && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Not authorized to modify this course' });
+        }
+
+        await db.query('DELETE FROM enrollments WHERE student_id = $1 AND course_id = $2', [studentId, courseId]);
+        res.json({ success: true, message: 'Student removed from course' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

@@ -9,18 +9,26 @@ const Signup = () => {
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('student');
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setSuccess('');
         try {
             const res = await api.post('/auth/signup', { name, email, password, role });
-            login(res.data.user, res.data.token);
-            if (res.data.user.role === 'instructor') {
-                navigate('/instructor');
+            if (res.data.user.status === 'pending') {
+                setSuccess('Account created successfully. Please wait for admin approval before logging in.');
+                setName(''); setEmail(''); setPassword('');
             } else {
-                navigate('/dashboard');
+                login(res.data.user, res.data.token);
+                if (res.data.user.role === 'instructor') {
+                    navigate('/instructor');
+                } else {
+                    navigate('/dashboard');
+                }
             }
         } catch (err) {
             setError(err.response?.data?.error || 'Signup failed');
@@ -32,6 +40,7 @@ const Signup = () => {
             <div className="max-w-md w-full bg-slate-800 rounded-xl shadow-2xl p-8 border border-slate-700">
                 <h2 className="text-3xl font-bold text-center text-white mb-8">Create Account</h2>
                 {error && <div className="bg-red-500/10 border border-red-500/50 text-red-500 rounded p-3 mb-4 text-sm text-center">{error}</div>}
+                {success && <div className="bg-green-500/10 border border-green-500/50 text-green-500 rounded p-3 mb-4 text-sm text-center">{success}</div>}
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>

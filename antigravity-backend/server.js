@@ -413,20 +413,37 @@ app.get('/api/admin/students', async (req, res) => {
 });
 
 // Get all users (for admin)
-app.get('/api/admin/users', async (req, res) => {
+app.get('/api/admin/users', authMiddleware, async (req, res) => {
     try {
         const result = await db.query(`
             SELECT 
-                u.user_id, u.name, u.email, u.role, u.created_at,
+                u.user_id, u.name, u.email, u.role, u.created_at, u.status,
                 COUNT(DISTINCT e.enrollment_id) as enrolled_courses,
                 COUNT(DISTINCT c.course_id) as created_courses
             FROM users u
             LEFT JOIN enrollments e ON u.user_id = e.student_id
             LEFT JOIN courses c ON u.user_id = c.instructor_id
-            GROUP BY u.user_id, u.name, u.email, u.role, u.created_at
+            GROUP BY u.user_id, u.name, u.email, u.role, u.created_at, u.status
             ORDER BY u.created_at DESC
         `);
         res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Approve user (for admin)
+app.put('/api/admin/users/:id/approve', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin' && req.user.role !== 'instructor') {
+            return res.status(403).json({ error: 'Not authorized' });
+        }
+        const { id } = req.params;
+        const result = await db.query(
+            'UPDATE users SET status = $1 WHERE user_id = $2 RETURNING user_id, status',
+            ['approved', id]
+        );
+        res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -752,6 +769,75 @@ const runPaymentMigration = async () => {
             connectionString: process.env.DB_URL,
             ssl: { rejectUnauthorized: false }
         });
+
+        // Check if status column exists in users
+        const checkStatusColumn = await pool.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'users' AND column_name = 'status'
+        `);
+
+        if (checkStatusColumn.rows.length === 0) {
+            console.log('Adding status column to users...');
+            await pool.query(`
+                ALTER TABLE users 
+                ADD COLUMN status VARCHAR(20) DEFAULT 'pending'
+            `);
+            await pool.query(`
+                UPDATE users SET status = 'approved'
+            `);
+            console.log('✅ Status column added and existing users approved');
+        }
+
+        // Check if reset token columns exist
+        const checkResetCols = await pool.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'users' AND column_name = 'reset_token'
+        `);
+
+        if (checkResetCols.rows.length === 0) {
+            console.log('Adding reset token columns to users...');
+            await pool.query(`
+                ALTER TABLE users 
+                ADD COLUMN reset_token VARCHAR(255),
+                ADD COLUMN reset_token_expires TIMESTAMP
+            `);
+            console.log('✅ Reset token columns added');
+        }
+
+        // Deduplicate courses
+        const duplicates = await pool.query(`
+            SELECT title, COUNT(*) 
+            FROM courses 
+            GROUP BY title 
+            HAVING COUNT(*) > 1
+        `);
+
+        if (duplicates.rows.length > 0) {
+            console.log('Found duplicate courses, cleaning up...');
+            for (const dup of duplicates.rows) {
+                const coursesToKeep = await pool.query(`
+                    SELECT c.course_id 
+                    FROM courses c
+                    LEFT JOIN sections s ON c.course_id = s.course_id
+                    LEFT JOIN lessons l ON s.section_id = l.section_id
+                    WHERE c.title = $1
+                    GROUP BY c.course_id
+                    ORDER BY COUNT(l.lesson_id) DESC, c.created_at ASC
+                    LIMIT 1
+                `, [dup.title]);
+
+                if (coursesToKeep.rows.length > 0) {
+                    const keepId = coursesToKeep.rows[0].course_id;
+                    await pool.query(`
+                        DELETE FROM courses 
+                        WHERE title = $1 AND course_id != $2
+                    `, [dup.title, keepId]);
+                }
+            }
+            console.log('✅ Duplicate courses removed.');
+        }
 
         // Check if payment_status column exists
         const checkResult = await pool.query(`
