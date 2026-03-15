@@ -137,13 +137,24 @@ const InstructorDash = () => {
         }
     };
 
-    const handleApproveUser = async (userId) => {
+    const handleUserStatus = async (userId, status) => {
         try {
-            await api.put(`/admin/users/${userId}/approve`);
+            await api.put(`/admin/users/${userId}/status`, { status });
             fetchAllUsers();
         } catch (err) {
             console.error(err);
-            alert('Failed to approve user: ' + (err.response?.data?.error || err.message));
+            alert('Failed to update user status: ' + (err.response?.data?.error || err.message));
+        }
+    };
+
+    const handleDeleteUser = async (userId) => {
+        if (!window.confirm('Are you sure you want to permanently delete this user? This cannot be undone.')) return;
+        try {
+            await api.delete(`/admin/users/${userId}`);
+            fetchAllUsers();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to delete user: ' + (err.response?.data?.error || err.message));
         }
     };
 
@@ -574,19 +585,47 @@ const InstructorDash = () => {
                                                 {new Date(u.created_at).toLocaleDateString()}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <span className={`px-2 py-1 rounded text-xs font-medium ${u.status === 'approved' ? 'bg-green-600/20 text-green-400' : 'bg-yellow-600/20 text-yellow-400'}`}>
+                                                <span className={`px-2 py-1 rounded text-xs font-medium ${u.status === 'approved' ? 'bg-green-600/20 text-green-400' :
+                                                        u.status === 'blocked' ? 'bg-red-600/20 text-red-400' :
+                                                            u.status === 'held' ? 'bg-orange-600/20 text-orange-400' :
+                                                                'bg-yellow-600/20 text-yellow-400'
+                                                    }`}>
                                                     {u.status?.toUpperCase() || 'PENDING'}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-right">
-                                                {u.status !== 'approved' && (
+                                                <div className="flex gap-2 justify-end">
+                                                    {u.status !== 'approved' && (
+                                                        <button
+                                                            onClick={() => handleUserStatus(u.user_id, 'approved')}
+                                                            className="text-xs bg-green-600/80 hover:bg-green-700 text-white px-3 py-1.5 rounded transition-colors"
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                    )}
+                                                    {u.status === 'approved' && (
+                                                        <button
+                                                            onClick={() => handleUserStatus(u.user_id, 'held')}
+                                                            className="text-xs bg-orange-600/80 hover:bg-orange-700 text-white px-3 py-1.5 rounded transition-colors"
+                                                        >
+                                                            Hold
+                                                        </button>
+                                                    )}
+                                                    {u.status !== 'blocked' && (
+                                                        <button
+                                                            onClick={() => handleUserStatus(u.user_id, 'blocked')}
+                                                            className="text-xs bg-red-600/80 hover:bg-red-700 text-white px-3 py-1.5 rounded transition-colors"
+                                                        >
+                                                            Block
+                                                        </button>
+                                                    )}
                                                     <button
-                                                        onClick={() => handleApproveUser(u.user_id)}
-                                                        className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded transition-colors"
+                                                        onClick={() => handleDeleteUser(u.user_id)}
+                                                        className="text-xs bg-slate-700 hover:bg-slate-600 text-red-400 px-3 py-1.5 rounded transition-colors"
                                                     >
-                                                        Approve
+                                                        Delete
                                                     </button>
-                                                )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

@@ -432,16 +432,23 @@ app.get('/api/admin/users', authMiddleware, async (req, res) => {
     }
 });
 
-// Approve user (for admin)
-app.put('/api/admin/users/:id/approve', authMiddleware, async (req, res) => {
+// Update user status (for admin)
+app.put('/api/admin/users/:id/status', authMiddleware, async (req, res) => {
     try {
         if (req.user.role !== 'admin' && req.user.role !== 'instructor') {
             return res.status(403).json({ error: 'Not authorized' });
         }
         const { id } = req.params;
+        const { status } = req.body;
+
+        const validStatuses = ['pending', 'approved', 'held', 'blocked'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+
         const result = await db.query(
             'UPDATE users SET status = $1 WHERE user_id = $2 RETURNING user_id, status',
-            ['approved', id]
+            [status, id]
         );
         res.json(result.rows[0]);
     } catch (err) {
@@ -728,39 +735,7 @@ const autoSeedCourses = async () => {
     }
 };
 
-// Run auto-seed on startup - with duplicate prevention
-setTimeout(async () => {
-    try {
-        const { Pool } = require('pg');
-        const pool = new Pool({
-            connectionString: process.env.DB_URL,
-            ssl: { rejectUnauthorized: false }
-        });
-
-        // Check if courses exist
-        const checkRes = await pool.query('SELECT COUNT(*) FROM courses');
-        const count = parseInt(checkRes.rows[0].count);
-
-        if (count > 10) {
-            // Too many courses - likely duplicates, clear and reseed
-            console.log('Too many courses detected, clearing duplicates...');
-            await pool.query('DELETE FROM progress');
-            await pool.query('DELETE FROM lessons');
-            await pool.query('DELETE FROM sections');
-            await pool.query('DELETE FROM enrollments');
-            await pool.query('DELETE FROM courses');
-            console.log('Duplicates cleared');
-        }
-
-        await pool.end();
-    } catch (err) {
-        console.log('Auto-seed check error:', err.message);
-    }
-
-    // Then run the actual seeding
-    autoSeedCourses();
-}, 3000);
-
+// Auto-seeding script removed to prevent destructive database wiping on server restart
 // Run payment status migration
 const runPaymentMigration = async () => {
     try {
@@ -830,10 +805,33 @@ const runPaymentMigration = async () => {
 
                 if (coursesToKeep.rows.length > 0) {
                     const keepId = coursesToKeep.rows[0].course_id;
-                    await pool.query(`
-                        DELETE FROM courses 
-                        WHERE title = $1 AND course_id != $2
-                    `, [dup.title, keepId]);
+
+                    const dupCourseIdsRes = await pool.query(`SELECT course_id FROM courses WHERE title = $1 AND course_id != $2`, [dup.title, keepId]);
+                    const dupCourseIds = dupCourseIdsRes.rows.map(r => r.course_id);
+
+                    if (dupCourseIds.length > 0) {
+                        try {
+                            // Move enrollments that don't already exist for keepId
+                            await pool.query(`
+                                UPDATE enrollments e1
+                                SET course_id = $1
+                                WHERE course_id = ANY($2)
+                                AND NOT EXISTS (
+                                    SELECT 1 FROM enrollments e2 WHERE e2.course_id = $1 AND e2.student_id = e1.student_id
+                                )
+                            `, [keepId, dupCourseIds]);
+
+                            // Delete any remaining enrollments for the duplicate courses (since student is already enrolled in keepId)
+                            await pool.query(`DELETE FROM enrollments WHERE course_id = ANY($1)`, [dupCourseIds]);
+
+                            await pool.query(`
+                                DELETE FROM courses 
+                                WHERE title = $1 AND course_id != $2
+                            `, [dup.title, keepId]);
+                        } catch (err) {
+                            console.log('Error deduplicating course', dup.title, err.message);
+                        }
+                    }
                 }
             }
             console.log('✅ Duplicate courses removed.');
