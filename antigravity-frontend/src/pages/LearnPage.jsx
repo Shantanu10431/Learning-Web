@@ -91,7 +91,7 @@ const LearnPage = () => {
                 }
 
                 if (targetLessonId) {
-                    // Get lesson from course tree that's already loaded
+                    // Get lesson from course tree - SYNCHRONOUS (already in memory)
                     let lessonFromTree = null;
                     if (courseRes.data && courseRes.data.sections) {
                         for (const section of courseRes.data.sections) {
@@ -106,14 +106,22 @@ const LearnPage = () => {
                     if (lessonFromTree) {
                         console.log('Lesson from tree:', lessonFromTree);
                         setCurrentLesson(lessonFromTree);
-                        // Get resume time
-                        try {
-                            const progRes = await api.get(`/progress/videos/${targetLessonId}`);
-                            setResumeTime(progRes.data.last_position_seconds || 0);
-                        } catch (e) { }
+                        // Fire progress fetch in background, don't wait
+                        api.get(`/progress/videos/${targetLessonId}`)
+                            .then(progRes => setResumeTime(progRes.data.last_position_seconds || 0))
+                            .catch(() => { });
                     } else {
-                        // Fallback to API
-                        await fetchLessonLockAndResume(targetLessonId);
+                        // Fallback to API - but set loading false first
+                        try {
+                            const lessonRes = await api.get(`/lessons/${targetLessonId}`);
+                            if (lessonRes.data) {
+                                setCurrentLesson(lessonRes.data);
+                                const progRes = await api.get(`/progress/videos/${targetLessonId}`);
+                                setResumeTime(progRes.data.last_position_seconds || 0);
+                            }
+                        } catch (e) {
+                            console.error('Lesson API failed:', e);
+                        }
                     }
                 }
             } catch (err) {
@@ -130,7 +138,14 @@ const LearnPage = () => {
                 }
             }
             setLoading(false);
-            fetchProgress();
+            // Fire progress fetch in background
+            api.get(`/progress/${courseId}`)
+                .then(progRes => {
+                    setCompletedLessons(progRes.data);
+                    return api.get(`/progress/${courseId}/percentage`);
+                })
+                .then(percRes => setProgressPercent(percRes.data.percentage || 0))
+                .catch(() => { });
         };
         fetchCourseAndLesson();
     }, [courseId, lessonId, navigate]);
@@ -163,7 +178,7 @@ const LearnPage = () => {
         }
     };
 
-    if (loading) return <div className="p-8 text-slate-400">Loading learning environment...</div>;
+    if (!course) return <div className="p-8 text-slate-400">Loading course...</div>;
     if (error) return (
         <div className="p-12 text-center max-w-2xl mx-auto mt-20 bg-slate-800 rounded-xl border border-slate-700">
             <h2 className="text-2xl font-bold text-white mb-4">Access Restricted</h2>
@@ -173,7 +188,7 @@ const LearnPage = () => {
             </Link>
         </div>
     );
-    if (!course || !currentLesson) return <div className="p-8 text-red-400">Course or lesson data unavailable.</div>;
+    if (!currentLesson) return <div className="p-8 text-slate-400">Loading lesson...</div>;
 
     const prevLessonId = currentLesson.previous_lesson_id;
     const nextLessonId = currentLesson.next_lesson_id;
