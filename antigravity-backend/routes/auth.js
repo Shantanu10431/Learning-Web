@@ -77,8 +77,8 @@ router.post('/signup', async (req, res) => {
         const password_hash = await bcrypt.hash(password, salt);
 
         const newUser = await db.query(
-            'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING user_id, name, email, role, status',
-            [name, email, password_hash, role || 'student']
+            'INSERT INTO users (name, email, password_hash, role, status) VALUES ($1, $2, $3, $4, $5) RETURNING user_id, name, email, role, status',
+            [name, email, password_hash, role || 'student', 'approved']
         );
 
         const user = newUser.rows[0];
