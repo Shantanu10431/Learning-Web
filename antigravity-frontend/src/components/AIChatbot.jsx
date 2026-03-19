@@ -27,18 +27,26 @@ const AIChatbot = () => {
 
         setTimeout(() => {
             const lowerQuery = userQuery.toLowerCase();
-            let botResponse = "I'm sorry, I don't understand that completely. Feel free to explore our courses or contact support!";
+            
+            // Default restricted response
+            let botResponse = "That’s above my pay grade 🤖";
 
-            if (lowerQuery.includes('price') || lowerQuery.includes('cost') || lowerQuery.includes('pay')) {
-                botResponse = "We recently updated our prices to Indian Rupees (INR)! You can purchase premium courses securely using UPI (Google Pay, PhonePe, Paytm) or any major Credit/Debit card.";
+            if (lowerQuery.includes('price') || lowerQuery.includes('cost') || lowerQuery.includes('pay') || lowerQuery.includes('buy')) {
+                botResponse = "We offer premium courses! You can purchase them securely using your preferred payment method once enrolled.";
             } else if (lowerQuery.includes('unenroll') || lowerQuery.includes('drop') || lowerQuery.includes('cancel')) {
-                botResponse = "You can unenroll from any course! Simply head to your Student Dashboard, and click the 'Drop' button next to the course you wish to leave.";
-            } else if (lowerQuery.includes('profile') || lowerQuery.includes('id') || lowerQuery.includes('account')) {
-                botResponse = "You can view your user identification and role by clicking your name in the top navigation bar and heading to the newly added 'My Profile' page.";
-            } else if (lowerQuery.includes('course') || lowerQuery.includes('enroll') || lowerQuery.includes('learn')) {
-                botResponse = "To learn, head over to the Explore tab! You'll find top-tier courses downloaded straight from YouTube playlists. Once enrolled, you can access the powerful web video player.";
-            } else if (lowerQuery.includes('hello') || lowerQuery.includes('hi')) {
-                botResponse = "Hi there! I'm here to answer any questions about the Hell Paradise LMS layout, payments, profiles, or course functionality.";
+                botResponse = "You can unenroll from any course from your Dashboard by clicking the 'Drop' button.";
+            } else if (lowerQuery.includes('profile') || lowerQuery.includes('account') || lowerQuery.includes('setting')) {
+                botResponse = "You can manage your account by clicking your avatar in the navbar and going to Profile Settings.";
+            } else if (lowerQuery.includes('course') || lowerQuery.includes('enroll') || lowerQuery.includes('explore') || lowerQuery.includes('learn')) {
+                botResponse = "Navigate to the 'Explore' tab to discover top-tier courses. Once enrolled, you'll get access to our premium video player and interactive syllabus.";
+            } else if (lowerQuery.includes('feature') || lowerQuery.includes('smart learning') || lowerQuery.includes('ai') || lowerQuery.includes('design') || lowerQuery.includes('ui')) {
+                botResponse = "Our platform features a premium Dark Glassmorphism UI, Smart Learning paths, AI-powered Recommendations, real-world project tracking, and a dynamic video learning experience built for serious engineers.";
+            } else if (lowerQuery.includes('dashboard') || lowerQuery.includes('progress') || lowerQuery.includes('track')) {
+                botResponse = "Your Dashboard tracks your progress seamlessly! It shows your in-progress courses, visually stunning progress bars, and recommends new trending content.";
+            } else if (lowerQuery.includes('hello') || lowerQuery.includes('hi ') || lowerQuery.includes('hey')) {
+                botResponse = "Hi there! I can help you with anything related to Hell Paradise LMS features, courses, dashboard, payments, or your profile.";
+            } else if (lowerQuery.includes('who are you') || lowerQuery.includes('what are you')) {
+                botResponse = "I'm the Hell Paradise AI Assistant! I exist solely to help you navigate this platform and understand its features.";
             }
 
             setMessages(prev => [...prev, { type: 'bot', text: botResponse }]);
