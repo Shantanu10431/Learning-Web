@@ -31,22 +31,68 @@ const AIChatbot = () => {
             // Default restricted response
             let botResponse = "That’s above my pay grade 🤖";
 
-            if (lowerQuery.includes('price') || lowerQuery.includes('cost') || lowerQuery.includes('pay') || lowerQuery.includes('buy')) {
-                botResponse = "We offer premium courses! You can purchase them securely using your preferred payment method once enrolled.";
-            } else if (lowerQuery.includes('unenroll') || lowerQuery.includes('drop') || lowerQuery.includes('cancel')) {
-                botResponse = "You can unenroll from any course from your Dashboard by clicking the 'Drop' button.";
-            } else if (lowerQuery.includes('profile') || lowerQuery.includes('account') || lowerQuery.includes('setting')) {
-                botResponse = "You can manage your account by clicking your avatar in the navbar and going to Profile Settings.";
-            } else if (lowerQuery.includes('course') || lowerQuery.includes('enroll') || lowerQuery.includes('explore') || lowerQuery.includes('learn')) {
-                botResponse = "Navigate to the 'Explore' tab to discover top-tier courses. Once enrolled, you'll get access to our premium video player and interactive syllabus.";
-            } else if (lowerQuery.includes('feature') || lowerQuery.includes('smart learning') || lowerQuery.includes('ai') || lowerQuery.includes('design') || lowerQuery.includes('ui')) {
-                botResponse = "Our platform features a premium Dark Glassmorphism UI, Smart Learning paths, AI-powered Recommendations, real-world project tracking, and a dynamic video learning experience built for serious engineers.";
-            } else if (lowerQuery.includes('dashboard') || lowerQuery.includes('progress') || lowerQuery.includes('track')) {
-                botResponse = "Your Dashboard tracks your progress seamlessly! It shows your in-progress courses, visually stunning progress bars, and recommends new trending content.";
-            } else if (lowerQuery.includes('hello') || lowerQuery.includes('hi ') || lowerQuery.includes('hey')) {
-                botResponse = "Hi there! I can help you with anything related to Hell Paradise LMS features, courses, dashboard, payments, or your profile.";
-            } else if (lowerQuery.includes('who are you') || lowerQuery.includes('what are you')) {
-                botResponse = "I'm the Hell Paradise AI Assistant! I exist solely to help you navigate this platform and understand its features.";
+            const intents = [
+                {
+                    keywords: ['sign up', 'signup', 'register', 'create account', 'join'],
+                    response: "You can create a free account by clicking 'Get Started' or 'Sign Up' in the top right! Once registered, you unlock your personal Dashboard and course tracking."
+                },
+                {
+                    keywords: ['sign in', 'signin', 'log in', 'login'],
+                    response: "To access your courses, click 'Sign In' in the navigation bar. If you're already logged in, you can jump straight to your Dashboard!"
+                },
+                {
+                    keywords: ['forgot', 'forget', 'password', 'reset'],
+                    response: "If you forgot your password, just head to the Sign In page and click 'Forgot Password' to securely reset it."
+                },
+                {
+                    keywords: ['price', 'cost', 'pay', 'buy', 'premium', 'money'],
+                    response: "We offer premium courses! You can purchase them securely using your preferred payment method once enrolled."
+                },
+                {
+                    keywords: ['unenroll', 'drop', 'cancel'],
+                    response: "You can unenroll from any course from your Dashboard by clicking the 'Drop' button."
+                },
+                {
+                    keywords: ['profile', 'account setting', 'avatar', 'name'],
+                    response: "You can manage your account by clicking your avatar in the navbar and going to Profile Settings."
+                },
+                {
+                    keywords: ['dashboard', 'progress', 'track', 'my learning'],
+                    response: "Your Dashboard tracks your progress seamlessly! It shows your in-progress courses, visually stunning progress bars, and recommends new trending content."
+                },
+                {
+                    keywords: ['course', 'enroll', 'explore', 'learn', 'catalog', 'video', 'class'],
+                    response: "Navigate to the 'Explore' tab to discover top-tier courses. Once enrolled, you'll get access to our premium video player and interactive syllabus."
+                },
+                {
+                    keywords: ['instructor', 'teach', 'creator'],
+                    response: "Instructor accounts have access to a special 'My Learning / Instructor' portal where they can manage their curriculum."
+                },
+                {
+                    keywords: ['feature', 'smart learning', 'ai', 'design', 'ui', 'glassmorphism', 'about', 'platform', 'what is this'],
+                    response: "Our platform features a premium Dark Glassmorphism UI, Smart Learning paths, AI-powered Recommendations, real-world project tracking, and a dynamic video learning experience."
+                },
+                {
+                    keywords: ['hello', 'hi', 'hey', 'greetings', 'yo'],
+                    response: "Hello there! I am your Hell Paradise AI Assistant. Ask me anything about signing up, finding courses, payments, or your dashboard!"
+                },
+                {
+                    keywords: ['who are you', 'what are you', 'bot', 'assistant'],
+                    response: "I'm the Hell Paradise AI Assistant! I exist solely to help you navigate this platform and understand its features."
+                }
+            ];
+
+            for (const intent of intents) {
+                if (intent.keywords.some(kw => {
+                    // Make sure "hi" is matched as a whole word to prevent matching "this"
+                    if (kw === 'hi') {
+                        return lowerQuery === 'hi' || lowerQuery.startsWith('hi ') || lowerQuery.endsWith(' hi') || lowerQuery.includes(' hi ');
+                    }
+                    return lowerQuery.includes(kw);
+                })) {
+                    botResponse = intent.response;
+                    break;
+                }
             }
 
             setMessages(prev => [...prev, { type: 'bot', text: botResponse }]);
