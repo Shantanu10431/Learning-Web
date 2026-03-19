@@ -191,7 +191,7 @@ const Home = () => {
                                             </span>
                                         </div>
                                         <span className="text-lg font-bold text-white">
-                                            {course.price > 0 ? `$${course.price}` : 'Free'}
+                                            {course.price > 0 ? `₹${course.price}` : 'Free'}
                                         </span>
                                     </div>
                                 </div>

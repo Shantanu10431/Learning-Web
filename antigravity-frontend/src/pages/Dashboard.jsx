@@ -353,7 +353,7 @@ const Dashboard = () => {
                                         <div className="flex flex-col py-1">
                                             <h4 className="text-white font-bold text-sm line-clamp-2 group-hover:text-indigo-400 transition-colors mb-1">{course.title}</h4>
                                             <p className="text-slate-500 text-xs mb-auto">{course.instructor_name || 'Instructor'}</p>
-                                            <span className="text-emerald-400 font-bold text-sm">{course.price > 0 ? `$${parseFloat(course.price).toFixed(0)}` : 'Free'}</span>
+                                            <span className="text-emerald-400 font-bold text-sm">{course.price > 0 ? `₹${parseFloat(course.price).toFixed(0)}` : 'Free'}</span>
                                         </div>
                                     </div>
                                 </Link>
