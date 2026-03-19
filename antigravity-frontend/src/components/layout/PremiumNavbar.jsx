@@ -155,7 +155,7 @@ const PremiumNavbar = () => {
                                     </AnimatePresence>
                                 </div>
                                 
-                                <div className="relative">
+                                <div className="relative" onMouseLeave={() => setProfileOpen(false)}>
                                     <button 
                                         className="flex items-center gap-2 outline-none"
                                         onMouseEnter={() => setProfileOpen(true)}
@@ -178,7 +178,6 @@ const PremiumNavbar = () => {
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                                 className="absolute right-0 top-12 w-64 glass border border-slate-700 overflow-hidden rounded-2xl py-2"
-                                                onMouseLeave={() => setProfileOpen(false)}
                                             >
                                                 <div className="px-4 py-3 border-b border-slate-700/50 bg-slate-800/30">
                                                     <p className="text-white font-medium truncate">{user.name}</p>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Sparkles, Brain, ArrowRight, Star, Code, PlayCircle } from 'lucide-react';
 import AnimatedButton from '../components/ui/AnimatedButton';
@@ -6,7 +6,10 @@ import GlassCard from '../components/ui/GlassCard';
 import api from '../api/axiosConfig';
 import { Link } from 'react-router-dom';
 
+import { AuthContext } from '../context/AuthContext';
+
 const Home = () => {
+    const { user } = useContext(AuthContext);
     const [trending, setTrending] = useState([]);
 
     useEffect(() => {
@@ -27,13 +30,13 @@ const Home = () => {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
-            transition: { staggerChildren: 0.15, delayChildren: 0.2 }
+            transition: { staggerChildren: 0.05, delayChildren: 0.05 }
         }
     };
 
     const itemVariants = {
-        hidden: { opacity: 0, y: 30 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+        hidden: { opacity: 0, y: 15 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } }
     };
 
     return (
@@ -70,7 +73,7 @@ const Home = () => {
                     </motion.p>
 
                     <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-                        <AnimatedButton to="/signup" variant="primary" className="w-full sm:w-auto py-4 px-8 text-base">
+                        <AnimatedButton to={user ? "/courses" : "/signup"} variant="primary" className="w-full sm:w-auto py-4 px-8 text-base">
                             Start Learning Free
                             <ArrowRight size={18} />
                         </AnimatedButton>
