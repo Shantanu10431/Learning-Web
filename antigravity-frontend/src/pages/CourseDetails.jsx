@@ -2,8 +2,11 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { AuthContext } from '../context/AuthContext';
-import { PlayCircle, Clock, BookOpen, User } from 'lucide-react';
+import { PlayCircle, Clock, BookOpen, User, CheckCircle2 } from 'lucide-react';
 import PaymentModal from '../components/PaymentModal';
+import AnimatedButton from '../components/ui/AnimatedButton';
+import GlassCard from '../components/ui/GlassCard';
+import { motion } from 'framer-motion';
 
 const CourseDetails = () => {
     const { id } = useParams();
@@ -36,18 +39,14 @@ const CourseDetails = () => {
     }, [id, user]);
 
     const handleEnroll = async () => {
-        console.log('Enroll clicked, user:', user, 'course price:', course.price);
-
         if (!user) {
             navigate('/login');
             return;
         }
 
         const price = parseFloat(course.price) || 0;
-        console.log('Parsed price:', price);
 
         if (price > 0) {
-            console.log('Opening payment modal');
             setIsPaymentModalOpen(true);
             return;
         }
@@ -56,19 +55,15 @@ const CourseDetails = () => {
     };
 
     const processEnrollment = async () => {
-        console.log('Processing enrollment for course:', id);
         setEnrolling(true);
         try {
             const price = parseFloat(course.price) || 0;
-            console.log('Course price:', price);
 
             // For free courses, enroll directly
             if (price === 0) {
-                console.log('Enrolling in free course');
                 await api.post(`/enroll/${id}`);
                 setIsEnrolled(true);
             } else {
-                console.log('Course is paid, opening payment modal');
                 setIsPaymentModalOpen(true);
             }
         } catch (err) {
@@ -86,14 +81,12 @@ const CourseDetails = () => {
 
     // Handle successful payment
     const handlePaymentComplete = async () => {
-        console.log('Payment completed, recording payment');
         try {
             // Record payment
-            const response = await api.post(`/record-payment/${id}`, {
+            await api.post(`/record-payment/${id}`, {
                 paymentId: `PAY${Date.now()}`,
                 amount: course.price
             });
-            console.log('Payment recorded:', response.data);
             setIsEnrolled(true);
             setIsPaymentModalOpen(false);
         } catch (err) {
@@ -104,88 +97,149 @@ const CourseDetails = () => {
         }
     };
 
-    if (loading) return <div className="p-8 text-slate-400">Loading...</div>;
-    if (!course) return <div className="p-8 text-red-400">Course not found.</div>;
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4" />
+            <p className="text-slate-400 font-medium animate-pulse">Loading course details...</p>
+        </div>
+    );
+    if (!course) return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-orange-400 mb-2">Error 404</h1>
+            <p className="text-slate-400 text-lg">We couldn't find the course you were looking for.</p>
+        </div>
+    );
 
     const totalLessons = course.sections?.reduce((sum, sec) => sum + (sec.lessons?.length || 0), 0) || 0;
     const price = parseFloat(course.price) || 0;
     const isPaidCourse = price > 0;
 
-    console.log('Rendering - price:', price, 'isPaidCourse:', isPaidCourse, 'isEnrolled:', isEnrolled);
-
     return (
-        <div className="py-12 px-6">
-            <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden mb-8">
-                <div className="h-64 md:h-80 w-full relative">
+        <div className="relative py-12 px-6 max-w-7xl mx-auto">
+            {/* Background glowing effects */}
+            <div className="absolute top-[0%] left-[50%] -translate-x-1/2 w-[80%] h-[30%] rounded-[100%] bg-indigo-500/10 blur-[120px] pointer-events-none" />
+
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass rounded-2xl overflow-hidden mb-12 shadow-2xl relative"
+            >
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/5 to-transparent pointer-events-none z-10" />
+                <div className="h-[40vh] md:h-[50vh] w-full relative">
                     <img src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3'} alt={course.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent flex items-end p-8">
-                        <div>
-                            <div className="text-indigo-400 font-medium mb-2 uppercase tracking-wider text-sm">{course.category}</div>
-                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{course.title}</h1>
-                            <div className="flex flex-wrap items-center gap-6 text-slate-300">
-                                <span className="flex items-center gap-2"><User size={18} /> {course.instructor_name}</span>
-                                <span className="flex items-center gap-2"><BookOpen size={18} /> {totalLessons} Lessons</span>
-                                <span className="flex items-center gap-2"><Clock size={18} /> Self-paced</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#030712] via-[#030712]/80 to-transparent flex items-end p-8 md:p-12 z-20">
+                        <div className="max-w-4xl">
+                            <div className="inline-block px-3 py-1 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-bold mb-4 uppercase tracking-widest text-xs rounded-full backdrop-blur-md">
+                                {course.category || 'General'}
+                            </div>
+                            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight drop-shadow-lg">
+                                {course.title}
+                            </h1>
+                            <div className="flex flex-wrap items-center gap-6 text-slate-300 font-medium">
+                                <span className="flex items-center gap-2"><div className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-indigo-400 border border-slate-700 shadow-inner"><User size={16} /></div> {course.instructor_name || 'Community Instructor'}</span>
+                                <span className="flex items-center gap-2 text-slate-400"><BookOpen size={18} className="text-purple-400" /> {totalLessons} Modules</span>
+                                <span className="flex items-center gap-2 text-slate-400"><Clock size={18} className="text-emerald-400" /> Self-paced</span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                    <section className="bg-slate-800 rounded-xl p-8 border border-slate-700">
-                        <h2 className="text-2xl font-bold text-white mb-4">About this course</h2>
-                        <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{course.description}</p>
-                    </section>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <div className="lg:col-span-2 space-y-10">
+                    <motion.section 
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                        className="glass-panel rounded-2xl p-8 md:p-10 border border-slate-800"
+                    >
+                        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                            <div className="w-2 h-8 bg-indigo-500 rounded-full" /> About this course
+                        </h2>
+                        <div className="text-slate-300 leading-relaxed text-lg whitespace-pre-wrap font-tight">
+                            {course.description || "No description provided for this premium course."}
+                        </div>
+                    </motion.section>
 
-                    <section className="bg-slate-800 rounded-xl p-8 border border-slate-700">
-                        <h2 className="text-2xl font-bold text-white mb-6">Course Syllabus</h2>
+                    <motion.section 
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                        className="glass-panel rounded-2xl p-8 md:p-10 border border-slate-800"
+                    >
+                        <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+                            <div className="w-2 h-8 bg-purple-500 rounded-full" /> Course Syllabus
+                        </h2>
                         {course.sections?.map((section, idx) => (
-                            <div key={section.section_id} className="mb-6 last:mb-0">
-                                <h3 className="text-lg font-bold text-slate-200 mb-3 border-b border-slate-700 pb-2">
-                                    Section {idx + 1}: {section.title}
+                            <div key={section.section_id} className="mb-8 last:mb-0">
+                                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-4 mb-4">
+                                    <span className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-sm border border-slate-700">{idx + 1}</span> 
+                                    {section.title}
                                 </h3>
-                                <ul className="space-y-2">
+                                <div className="space-y-3 pl-12 border-l-2 border-slate-800 ml-4 relative">
                                     {section.lessons?.map((lesson, lIdx) => (
-                                        <li key={lesson.lesson_id} className="flex items-center gap-3 text-slate-400 p-3 hover:bg-slate-900/50 rounded-lg transition-colors">
-                                            <PlayCircle size={16} className="text-indigo-400 flex-shrink-0" />
-                                            <div>
-                                                <span className="text-slate-300 block">{lIdx + 1}. {lesson.title}</span>
+                                        <div key={lesson.lesson_id} className="group flex items-center gap-4 p-4 bg-slate-900/40 hover:bg-slate-800/80 border border-slate-800 hover:border-indigo-500/30 rounded-xl transition-all duration-300 relative before:w-6 before:h-px before:bg-slate-800 before:absolute before:-left-12 before:top-1/2">
+                                            <div className="w-10 h-10 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20 group-hover:bg-indigo-500 group-hover:text-white transition-colors duration-300 shadow-[0_0_15px_rgba(99,102,241,0)] group-hover:shadow-[0_0_15px_rgba(99,102,241,0.4)]">
+                                                <PlayCircle size={18} />
                                             </div>
-                                        </li>
+                                            <div>
+                                                <span className="text-slate-200 font-medium block text-base group-hover:text-white transition-colors">{lesson.title}</span>
+                                                <span className="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-1 block">Video Lesson</span>
+                                            </div>
+                                        </div>
                                     ))}
-                                </ul>
+                                </div>
                             </div>
                         ))}
-                    </section>
+                    </motion.section>
                 </div>
 
                 <div>
-                    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 sticky top-6">
-                        <div className="text-3xl font-bold text-white mb-6">
-                            {isEnrolled ? "You're Enrolled!" : (isPaidCourse ? `₹${price.toFixed(0)}` : "Free Enrollment")}
+                    <motion.div 
+                        initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
+                        className="glass-panel rounded-2xl p-8 border border-slate-700 sticky top-28 shadow-2xl"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-2xl pointer-events-none" />
+                        
+                        <div className="text-4xl font-extrabold text-white mb-2 relative z-10">
+                            {isEnrolled ? (
+                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-400">Enrolled</span>
+                            ) : (
+                                isPaidCourse ? `₹${price.toFixed(0)}` : "Free"
+                            )}
                         </div>
+                        <p className="text-slate-400 mb-8 font-medium">Includes full lifetime access.</p>
 
                         {isEnrolled ? (
-                            <Link to={`/learn/${course.course_id}/${course.sections?.[0]?.lessons?.[0]?.lesson_id || ''}`} className="block text-center w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-4 rounded-lg transition-colors text-lg">
-                                Go to Course
-                            </Link>
+                            <AnimatedButton 
+                                to={`/learn/${course.course_id}/${course.sections?.[0]?.lessons?.[0]?.lesson_id || ''}`} 
+                                className="w-full py-4 text-base tracking-wide"
+                                variant="primary"
+                            >
+                                Enter Course <PlayCircle size={20} className="ml-2" />
+                            </AnimatedButton>
                         ) : user ? (
-                            <button onClick={handleEnroll} disabled={enrolling} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-4 px-4 rounded-lg transition-colors text-lg flex items-center justify-center">
-                                {enrolling ? 'Enrolling...' : (isPaidCourse ? 'Buy Now' : 'Enroll for Free')}
-                            </button>
+                            <AnimatedButton 
+                                onClick={handleEnroll} 
+                                disabled={enrolling} 
+                                className="w-full py-4 text-base tracking-wide"
+                                variant="primary"
+                            >
+                                {enrolling ? 'Enrolling...' : (isPaidCourse ? 'Unlock Course' : 'Enroll for Free')}
+                            </AnimatedButton>
                         ) : (
-                            <Link to="/login" className="block text-center w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 px-4 rounded-lg transition-colors text-lg">
+                            <AnimatedButton 
+                                to="/login" 
+                                className="w-full py-4 text-base tracking-wide"
+                                variant="secondary"
+                            >
                                 Sign In to Enroll
-                            </Link>
+                            </AnimatedButton>
                         )}
 
-                        <div className="space-y-4 mt-8 text-slate-300 text-sm border-t border-slate-700 pt-6">
-                            <div className="flex items-center gap-3"><BookOpen size={18} className="text-indigo-400" /> Full lifetime access</div>
-                            <div className="flex items-center gap-3"><PlayCircle size={18} className="text-indigo-400" /> Access on mobile and TV</div>
+                        <div className="space-y-4 mt-8 pb-4 relative z-10 text-slate-300 text-sm">
+                            <div className="flex items-center gap-3 bg-slate-900/50 p-3 rounded-lg border border-slate-800"><CheckCircle2 size={18} className="text-emerald-400" /> Full lifetime access</div>
+                            <div className="flex items-center gap-3 bg-slate-900/50 p-3 rounded-lg border border-slate-800"><CheckCircle2 size={18} className="text-emerald-400" /> Access on all devices</div>
+                            <div className="flex items-center gap-3 bg-slate-900/50 p-3 rounded-lg border border-slate-800"><CheckCircle2 size={18} className="text-emerald-400" /> Certificate of completion</div>
+                            <div className="flex items-center gap-3 bg-slate-900/50 p-3 rounded-lg border border-slate-800"><CheckCircle2 size={18} className="text-emerald-400" /> Support via community</div>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </div>
 

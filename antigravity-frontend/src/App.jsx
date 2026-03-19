@@ -2,9 +2,10 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Navigation from './components/Navigation';
+import PremiumNavbar from './components/layout/PremiumNavbar';
 
 // Pages
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
@@ -21,12 +22,13 @@ function App() {
     return (
         <AuthProvider>
             <Router>
-                <div className="min-h-screen bg-slate-900 border-t border-slate-800">
-                    <Navigation />
-                    <main className="max-w-7xl mx-auto">
+                <div className="min-h-screen bg-[#030712] font-sans selection:bg-indigo-500/30">
+                    <PremiumNavbar />
+                    {/* The padding top prevents content from hiding behind the fixed navbar */}
+                    <main className="pt-20">
                         <Routes>
                             {/* Public Routes */}
-                            <Route path="/" element={<Navigate to="/courses" replace />} />
+                            <Route path="/" element={<Home />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/signup" element={<Signup />} />
                             <Route path="/forgot-password" element={<ForgotPassword />} />

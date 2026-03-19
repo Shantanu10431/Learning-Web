@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import VideoPlayer from '../components/VideoPlayer';
-import { CheckCircle, Circle, ChevronLeft, ChevronRight, Menu, Lock } from 'lucide-react';
+import { CheckCircle, Circle, ChevronLeft, ChevronRight, Menu, Lock, PlayCircle, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import AnimatedButton from '../components/ui/AnimatedButton';
 
 const LearnPage = () => {
     const { courseId, lessonId } = useParams();
@@ -26,59 +28,10 @@ const LearnPage = () => {
         } catch (e) { }
     };
 
-    const fetchLessonLockAndResume = async (lId) => {
-        try {
-            console.log('Fetching lesson:', lId);
-
-            // Get lesson data from the course tree that's already loaded
-            let lessonData = null;
-            if (course && course.sections) {
-                for (const section of course.sections) {
-                    const found = section.lessons?.find(l => l.lesson_id === lId);
-                    if (found) {
-                        lessonData = found;
-                        break;
-                    }
-                }
-            }
-
-            if (!lessonData) {
-                // Fallback: try the API if not found in course tree
-                try {
-                    const lessonRes = await api.get(`/lessons/${lId}`);
-                    lessonData = lessonRes.data;
-                } catch (e) {
-                    console.error('Lesson not found in course tree or API');
-                }
-            }
-
-            if (!lessonData) {
-                setError('Lesson not found');
-                return;
-            }
-
-            console.log('Lesson data from tree:', lessonData);
-            setCurrentLesson(lessonData);
-
-            // Try to get resume time
-            try {
-                const progRes = await api.get(`/progress/videos/${lId}`);
-                setResumeTime(progRes.data.last_position_seconds || 0);
-            } catch (e) {
-                console.log('No progress found');
-            }
-        } catch (err) {
-            console.error('Error fetching lesson:', err);
-            setError('Failed to load lesson: ' + err.message);
-        }
-    };
-
     useEffect(() => {
         const fetchCourseAndLesson = async () => {
             try {
-                console.log('Fetching course tree for:', courseId);
                 const courseRes = await api.get(`/courses/${courseId}/tree`);
-                console.log('Course tree response:', courseRes.data);
                 setCourse(courseRes.data);
 
                 let targetLessonId = lessonId;
@@ -91,7 +44,7 @@ const LearnPage = () => {
                 }
 
                 if (targetLessonId) {
-                    // Get lesson from course tree - SYNCHRONOUS (already in memory)
+                    // Get lesson from course tree first
                     let lessonFromTree = null;
                     if (courseRes.data && courseRes.data.sections) {
                         for (const section of courseRes.data.sections) {
@@ -104,14 +57,11 @@ const LearnPage = () => {
                     }
 
                     if (lessonFromTree) {
-                        console.log('Lesson from tree:', lessonFromTree);
                         setCurrentLesson(lessonFromTree);
-                        // Fire progress fetch in background, don't wait
                         api.get(`/progress/videos/${targetLessonId}`)
                             .then(progRes => setResumeTime(progRes.data.last_position_seconds || 0))
                             .catch(() => { });
                     } else {
-                        // Fallback to API - but set loading false first
                         try {
                             const lessonRes = await api.get(`/lessons/${targetLessonId}`);
                             if (lessonRes.data) {
@@ -125,8 +75,6 @@ const LearnPage = () => {
                     }
                 }
             } catch (err) {
-                console.error('Full error:', err);
-                console.error('Error response:', err.response?.data);
                 if (err.response?.status === 402) {
                     setError('Payment required to access this course. Please complete enrollment.');
                 } else if (err.response?.status === 403) {
@@ -138,7 +86,6 @@ const LearnPage = () => {
                 }
             }
             setLoading(false);
-            // Fire progress fetch in background
             api.get(`/progress/${courseId}`)
                 .then(progRes => {
                     setCompletedLessons(progRes.data);
@@ -178,33 +125,46 @@ const LearnPage = () => {
         }
     };
 
-    if (!course) return <div className="p-8 text-slate-400">Loading course...</div>;
-    if (error) return (
-        <div className="p-12 text-center max-w-2xl mx-auto mt-20 bg-slate-800 rounded-xl border border-slate-700">
-            <h2 className="text-2xl font-bold text-white mb-4">Access Restricted</h2>
-            <p className="text-red-400 mb-8">{error}</p>
-            <Link to={`/courses/${courseId}`} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">
-                Return to Course Overview
-            </Link>
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4" />
+            <p className="text-slate-400 font-medium animate-pulse">Loading curriculum...</p>
         </div>
     );
-    if (!currentLesson) return <div className="p-8 text-slate-400">Loading lesson...</div>;
+
+    if (error) return (
+        <div className="p-12 text-center max-w-2xl mx-auto mt-20 glass rounded-2xl border border-slate-700 shadow-2xl">
+            <Lock size={64} className="text-red-400 mx-auto mb-6" />
+            <h2 className="text-3xl font-bold text-white mb-4">Access Restricted</h2>
+            <p className="text-slate-400 mb-8 border-l-4 border-red-500/50 pl-4 py-2 bg-red-500/10 rounded-r-lg max-w-md mx-auto">{error}</p>
+            <AnimatedButton to={`/courses/${courseId}`} variant="primary">
+                Return to Course Overview
+            </AnimatedButton>
+        </div>
+    );
+
+    if (!currentLesson) return <div className="p-8 text-slate-400 text-center">Loading lesson data...</div>;
 
     const prevLessonId = currentLesson.previous_lesson_id;
     const nextLessonId = currentLesson.next_lesson_id;
+    const isCompleted = completedLessons.some(id => String(id) === String(lessonId));
 
     return (
-        <div className="flex flex-col md:flex-row min-h-[calc(100vh-73px)] border-t border-slate-800">
-            <div className="md:hidden bg-slate-900 p-4 border-b border-slate-800 flex justify-between items-center">
-                <h2 className="text-white font-medium truncate pr-4">{course.title}</h2>
-                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-slate-400 hover:text-white">
-                    <Menu size={24} />
+        <div className="flex flex-col md:flex-row h-[calc(100vh-73px)] overflow-hidden bg-[#030712] relative">
+            {/* Background Blur Effect */}
+            <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-500/10 blur-[120px] pointer-events-none" />
+
+            <div className="md:hidden glass p-4 border-b border-slate-800 flex justify-between items-center z-20">
+                <h2 className="text-white font-medium pl-2 truncate pr-4 text-sm">{course.title}</h2>
+                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-indigo-400 hover:text-white p-2 rounded-lg bg-indigo-500/10 transition-colors">
+                    {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
                 </button>
             </div>
 
-            <div className="flex-1 flex flex-col bg-slate-950">
-                <div className="p-4 md:p-8 bg-black">
-                    <VideoPlayer
+            <div className="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar relative z-10">
+                <div className="w-full bg-black/90 aspect-video md:aspect-auto md:h-[60vh] lg:h-[70vh] relative shadow-2xl">
+                     <VideoPlayer
                         youtubeUrl={currentLesson.youtube_url}
                         isLocked={currentLesson.locked}
                         startPositionSeconds={resumeTime}
@@ -213,96 +173,151 @@ const LearnPage = () => {
                     />
                 </div>
 
-                <div className="p-6 md:p-8 flex-1">
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+                <div className="p-6 md:p-10 lg:p-12 flex-1 max-w-5xl mx-auto w-full">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10"
+                    >
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{currentLesson.title}</h1>
-                            <p className="text-slate-400">Course: {course.title}</p>
+                            <div className="inline-block px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold mb-4 uppercase tracking-widest text-xs rounded-full">
+                                {course.title}
+                            </div>
+                            <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-4 tracking-tight leading-tight">{currentLesson.title}</h1>
                         </div>
 
                         <button
                             onClick={() => handleMarkComplete(resumeTime)}
-                            disabled={completedLessons.some(id => String(id) === String(lessonId))}
-                            className={`${completedLessons.some(id => String(id) === String(lessonId)) ? 'bg-slate-800 text-emerald-400 cursor-default' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 whitespace-nowrap border border-transparent ${completedLessons.some(id => String(id) === String(lessonId)) ? 'border-emerald-500/30' : ''} disabled:opacity-50`}
+                            disabled={isCompleted}
+                            className={`
+                                font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-3 whitespace-nowrap shadow-lg shrink-0
+                                ${isCompleted 
+                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 cursor-default shadow-emerald-500/5' 
+                                    : 'bg-indigo-600 hover:bg-indigo-500 text-white border border-transparent hover:shadow-[0_0_20px_rgba(99,102,241,0.4)]'
+                                }
+                            `}
                         >
-                            <CheckCircle size={20} /> {completedLessons.some(id => String(id) === String(lessonId)) ? 'Completed' : 'Mark Complete'}
+                            {isCompleted ? <CheckCircle size={22} className="text-emerald-400" /> : <Circle size={22} />} 
+                            {isCompleted ? 'Completed' : 'Mark Complete'}
                         </button>
-                    </div>
+                    </motion.div>
 
-                    <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                        <h3 className="text-lg font-medium text-white mb-2">Lesson Material</h3>
-                        <p className="text-slate-400 whitespace-pre-wrap">{currentLesson.description || 'No additional notes provided for this lesson.'}</p>
-                    </div>
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                        className="glass-panel rounded-2xl p-8 border border-slate-800 mb-10"
+                    >
+                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                            <BookOpen size={20} className="text-purple-400" /> Lesson Details
+                        </h3>
+                        <div className="text-slate-300 whitespace-pre-wrap leading-relaxed text-lg">
+                            {currentLesson.description || 'Watch the video to master this concept. No additional reading material is provided for this specific lesson.'}
+                        </div>
+                    </motion.div>
 
-                    <div className="flex justify-between items-center mt-8 pt-8 border-t border-slate-800">
+                    <div className="flex flex-col sm:flex-row justify-between items-center mt-12 pt-8 border-t border-slate-800 pb-12 gap-4">
                         {prevLessonId ? (
-                            <Link to={`/learn/${courseId}/${prevLessonId}`} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
-                                <ChevronLeft size={20} /> <span className="hidden sm:inline">Previous Lesson</span>
+                            <Link to={`/learn/${courseId}/${prevLessonId}`} className="group flex items-center justify-center sm:justify-start gap-3 w-full sm:w-auto px-6 py-4 glass hover:bg-slate-800 rounded-xl transition-all text-slate-300 hover:text-white border border-slate-800 hover:border-slate-600">
+                                <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> 
+                                <span className="font-semibold tracking-wide">Previous</span>
                             </Link>
-                        ) : <div></div>}
+                        ) : <div className="hidden sm:block"></div>}
 
                         {nextLessonId ? (
-                            <Link to={`/learn/${courseId}/${nextLessonId}`} className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors">
-                                <span className="hidden sm:inline">Next Lesson</span> <ChevronRight size={20} />
+                            <Link to={`/learn/${courseId}/${nextLessonId}`} className="group flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto px-6 py-4 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 rounded-xl transition-all border border-indigo-500/20 hover:border-indigo-500/40">
+                                <span className="font-semibold tracking-wide">Next Lesson</span> 
+                                <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                             </Link>
                         ) : (
-                            <Link to="/dashboard" className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors">
-                                Finish Course <CheckCircle size={20} />
+                            <Link to="/dashboard" className="group flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto px-6 py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl transition-all border border-emerald-500/20 hover:border-emerald-500/40">
+                                <span className="font-semibold tracking-wide">Finish Course</span> 
+                                <CheckCircle size={20} className="group-hover:scale-110 transition-transform" />
                             </Link>
                         )}
                     </div>
                 </div>
             </div>
 
-            <div className={`${isSidebarOpen ? 'block' : 'hidden'} md:block w-full md:w-80 lg:w-96 bg-slate-900 border-l border-slate-800 overflow-y-auto max-h-[calc(100vh-73px)] shrink-0`}>
-                <div className="p-6 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
-                    <h2 className="text-lg font-bold text-white line-clamp-2">{course.title}</h2>
-                    <div className="mt-4">
-                        <div className="flex justify-between text-xs text-slate-400 mb-1">
-                            <span>Your Progress</span>
-                            <span>{progressPercent}%</span>
-                        </div>
-                        <div className="w-full bg-slate-800 rounded-full h-2">
-                            <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-4">
-                    {course.sections?.map((section, sIdx) => (
-                        <div key={section.section_id} className="mb-4">
-                            <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2 px-2">
-                                Section {sIdx + 1}: {section.title}
-                            </h3>
-                            <div className="space-y-1">
-                                {section.lessons?.map((lesson, lIdx) => {
-                                    const isActive = lesson.lesson_id === lessonId;
-                                    const isCompleted = completedLessons.includes(lesson.lesson_id);
-
-                                    return (
-                                        <Link
-                                            key={lesson.lesson_id}
-                                            to={lesson.locked ? '#' : `/learn/${courseId}/${lesson.lesson_id}`}
-                                            onClick={(e) => {
-                                                if (lesson.locked) e.preventDefault();
-                                                else if (window.innerWidth < 768) setIsSidebarOpen(false);
-                                            }}
-                                            className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-indigo-600/20 text-indigo-400' : lesson.locked ? 'text-slate-500 opacity-60 cursor-not-allowed' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
-                                        >
-                                            <div className="mt-0.5 shrink-0">
-                                                {isCompleted ? <CheckCircle size={16} className="text-emerald-500" /> : lesson.locked ? <Lock size={16} className="text-slate-600" /> : <Circle size={16} className="text-slate-600" />}
-                                            </div>
-                                            <div className="text-sm">
-                                                <span className={`font-medium block leading-tight mb-1 ${isActive ? 'text-indigo-400' : 'text-slate-300'}`}>{lIdx + 1}. {lesson.title}</span>
-                                            </div>
-                                        </Link>
-                                    );
-                                })}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <motion.div 
+                        initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+                        className="fixed md:static inset-y-0 right-0 w-80 lg:w-96 glass-panel border-l border-slate-800 overflow-y-auto custom-scrollbar shadow-2xl z-30 flex flex-col mt-[73px] md:mt-0 h-[calc(100vh-73px)]"
+                    >
+                        <div className="p-6 border-b border-slate-800/60 sticky top-0 backdrop-blur-xl bg-slate-900/60 z-10 shrink-0">
+                            <h2 className="text-lg font-bold text-white line-clamp-2 leading-tight">{course.title}</h2>
+                            <div className="mt-5">
+                                <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                                    <span>Course Progress</span>
+                                    <span className="text-indigo-400">{progressPercent}%</span>
+                                </div>
+                                <div className="w-full bg-slate-800/80 rounded-full h-2 overflow-hidden border border-slate-700/50">
+                                    <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-1000 relative" style={{ width: `${progressPercent}%` }}>
+                                         <div className="absolute inset-0 bg-white/20 w-full h-full pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)', transform: 'translateX(-100%)', animation: 'shimmer 2s infinite' }} />
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    ))}
-                </div>
-            </div>
+
+                        <div className="p-4 flex-1">
+                            {course.sections?.map((section, sIdx) => (
+                                <div key={section.section_id} className="mb-6">
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-3 flex items-center gap-2">
+                                        <span className="w-5 h-5 rounded-md bg-slate-800 flex items-center justify-center text-[10px] text-slate-300">{sIdx + 1}</span>
+                                        {section.title}
+                                    </h3>
+                                    <div className="space-y-1">
+                                        {section.lessons?.map((lesson, lIdx) => {
+                                            const isActive = lesson.lesson_id === lessonId;
+                                            const isLessonCompleted = completedLessons.includes(lesson.lesson_id);
+
+                                            return (
+                                                <Link
+                                                    key={lesson.lesson_id}
+                                                    to={lesson.locked ? '#' : `/learn/${courseId}/${lesson.lesson_id}`}
+                                                    onClick={(e) => {
+                                                        if (lesson.locked) e.preventDefault();
+                                                        else if (window.innerWidth < 768) setIsSidebarOpen(false);
+                                                    }}
+                                                    className={`group flex items-start gap-3 p-3 rounded-xl transition-all duration-300 ${isActive ? 'bg-indigo-600/10 border border-indigo-500/20' : lesson.locked ? 'opacity-50 cursor-not-allowed border border-transparent' : 'hover:bg-slate-800/50 border border-transparent hover:border-slate-700/50'}`}
+                                                >
+                                                    <div className="mt-0.5 shrink-0 relative flex items-center justify-center">
+                                                        {isLessonCompleted ? (
+                                                            <CheckCircle size={18} className="text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                                                        ) : lesson.locked ? (
+                                                            <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                                                                <Lock size={10} className="text-slate-500" />
+                                                            </div>
+                                                        ) : isActive ? (
+                                                            <div className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-500/50">
+                                                                <PlayCircle size={12} className="text-indigo-400" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="w-5 h-5 rounded-full border-2 border-slate-700 group-hover:border-slate-500 transition-colors" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <span className={`font-medium block leading-snug ${isActive ? 'text-indigo-300 drop-shadow-[0_0_8px_rgba(99,102,241,0.2)]' : isLessonCompleted ? 'text-slate-300' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                                                            {lIdx + 1}. {lesson.title}
+                                                        </span>
+                                                        <span className="text-[10px] uppercase tracking-widest text-slate-500 mt-1 font-semibold block">Video • {isActive ? 'Playing' : isLessonCompleted ? 'Watched' : lesson.locked ? 'Locked' : 'Available'}</span>
+                                                    </div>
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            
+            {/* Mobile Sidebar Overlay */}
+            {isSidebarOpen && window.innerWidth < 768 && (
+                <div 
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 mt-[73px]"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
         </div>
     );
 };

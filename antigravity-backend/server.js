@@ -14,7 +14,13 @@ process.env.JWT_SECRET3 = j1 + 'tkey_123';
 const y1 = 'AIzaSyBq4CgHfhNx';
 const y2 = '-xPTZOtcE9e3JezGkJEuyrM';
 process.env.YOUTUBE_API_KEY = y1 + y2;
-process.env.CORS_ORIGIN = 'https://learning-web-lac.vercel.app';
+process.env.YOUTUBE_API_KEY = y1 + y2;
+
+// Allow localhost for local testing along with the Vercel app
+const allowedOrigins = [
+    'https://learning-web-lac.vercel.app',
+    'http://localhost:5173'
+];
 
 // Initialize core dependencies
 const express = require('express');
@@ -23,7 +29,13 @@ const cookieParser = require('cookie-parser');
 
 const app = express();
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json());
