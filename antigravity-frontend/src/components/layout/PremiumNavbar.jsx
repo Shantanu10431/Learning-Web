@@ -113,7 +113,7 @@ const PremiumNavbar = () => {
 
                         {user ? (
                             <div className="flex items-center gap-4 relative">
-                                <div className="relative">
+                                <div className="relative" onMouseLeave={() => setIsNotificationOpen(false)}>
                                     <button 
                                         onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                                         className="text-slate-400 hover:text-white transition-colors relative"
@@ -131,10 +131,10 @@ const PremiumNavbar = () => {
                                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                className="absolute right-0 top-12 w-80 glass border border-slate-700 overflow-hidden rounded-2xl z-50 shadow-2xl"
-                                                onMouseLeave={() => setIsNotificationOpen(false)}
+                                                className="absolute right-0 top-full pt-4 w-80 z-50 pointer-events-auto"
                                             >
-                                                <div className="p-4 border-b border-slate-700/50 bg-slate-800/30 flex justify-between items-center">
+                                                <div className="glass border border-slate-700 overflow-hidden rounded-2xl shadow-2xl">
+                                                    <div className="p-4 border-b border-slate-700/50 bg-slate-800/30 flex justify-between items-center">
                                                     <h3 className="text-white font-bold text-sm">Notifications</h3>
                                                     <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full">1 New</span>
                                                 </div>
@@ -149,6 +149,7 @@ const PremiumNavbar = () => {
                                                             <p className="text-slate-500 text-[10px] mt-2 font-medium">{loginTime}</p>
                                                         </div>
                                                     </div>
+                                                </div>
                                                 </div>
                                             </motion.div>
                                         )}
@@ -177,9 +178,10 @@ const PremiumNavbar = () => {
                                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                className="absolute right-0 top-12 w-64 glass border border-slate-700 overflow-hidden rounded-2xl py-2"
+                                                className="absolute right-0 top-full pt-4 w-64 z-50 pointer-events-auto"
                                             >
-                                                <div className="px-4 py-3 border-b border-slate-700/50 bg-slate-800/30">
+                                                <div className="glass border border-slate-700 overflow-hidden rounded-2xl py-2 shadow-2xl">
+                                                    <div className="px-4 py-3 border-b border-slate-700/50 bg-slate-800/30">
                                                     <p className="text-white font-medium truncate">{user.name}</p>
                                                     <p className="text-slate-400 text-xs truncate bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-emerald-400 font-medium mt-0.5">{user.role.toUpperCase()}</p>
                                                 </div>
@@ -195,6 +197,7 @@ const PremiumNavbar = () => {
                                                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
                                                         <LogOut size={16} /> Sign out
                                                     </button>
+                                                </div>
                                                 </div>
                                             </motion.div>
                                         )}
